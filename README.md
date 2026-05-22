@@ -1,4 +1,4 @@
-﻿# multi-tenant-writing
+# multi-tenant-writing
 
 A multi-tenant rebuild of [alexandrapintea.eu](https://alexandrapintea.eu) and [roamliterary.com](https://roamliterary.com) on a shared Django + Angular SSR + Docker stack.
 

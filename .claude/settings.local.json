@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(python -m venv \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\" 2>&1)",
+      "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\pip.exe\" install -e \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend[dev]\" 2>&1)",
+      "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install -e \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend[dev]\" 2>&1)",
+      "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend[dev]\" 2>&1)",
+      "PowerShell(docker compose *)",
+      "PowerShell(Stop-Process *)"
+    ]
+  }
+}
