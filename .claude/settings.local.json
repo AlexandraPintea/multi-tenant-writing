@@ -6,7 +6,8 @@
       "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install -e \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend[dev]\" 2>&1)",
       "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend[dev]\" 2>&1)",
       "PowerShell(docker compose *)",
-      "PowerShell(Stop-Process *)"
+      "PowerShell(Stop-Process *)",
+      "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install \"django-parler>=2.3\" \"Pillow>=10.0\" 2>&1)"
     ]
   }
 }
