@@ -19,6 +19,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # third-party
     "parler",
+    "rest_framework",
+    "corsheaders",
     # project apps
     "sites_core.apps.SitesCoreConfig",
     "content.apps.ContentConfig",
@@ -29,11 +31,19 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # CorsMiddleware must sit as high as possible — before any middleware that
+    # can generate a response (CommonMiddleware) — so CORS headers are added to
+    # those early responses too.
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # SiteMiddleware runs after CommonMiddleware (which validates Host against
+    # ALLOWED_HOSTS) and after auth, so request.site and request.user are both
+    # available to views and the admin. It has no CSRF/session dependency.
+    "sites_core.middleware.SiteMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -99,3 +109,21 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Site resolved by sites_core.middleware.SiteMiddleware for unknown hosts
+# (localhost, health checks, the VPS IP). Configurable per environment.
+DEFAULT_SITE_DOMAIN = config("DEFAULT_SITE_DOMAIN", default="alexandrapintea.eu")
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+}
+
+# CORS: the browser never calls Django directly in v1, but ng serve (4200) and
+# the SSR dev server (4000) do during development. Production will narrow this
+# to the SSR container's internal origin (see architecture §7.1).
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS",
+    default="http://localhost:4200,http://localhost:4000",
+    cast=Csv(),
+)
