@@ -77,6 +77,10 @@ There is no `requirements.txt` — dependencies live in `backend/pyproject.toml`
 
 Not scaffolded yet. Phase 2.1 in the playbook is the entry point. Expected stack: Angular 18+ standalone components with SSR, ngx-translate, NgRx (classic for the content slice, SignalStore for site-config and language). Don't add Angular files outside `frontend/` and don't introduce NgModules — Phase 2.1 explicitly requires standalone-only.
 
+## Code style
+
+In the backend, use comments sparingly. Only comment complex code where the WHY is non-obvious (hidden constraints, subtle invariants, workarounds). Don't comment what the code already says.
+
 ## Working-directory specifics
 
 ### Windows / PowerShell
