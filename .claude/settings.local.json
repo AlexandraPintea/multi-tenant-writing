@@ -7,7 +7,25 @@
       "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend[dev]\" 2>&1)",
       "PowerShell(docker compose *)",
       "PowerShell(Stop-Process *)",
-      "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install \"django-parler>=2.3\" \"Pillow>=10.0\" 2>&1)"
+      "PowerShell(& \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\backend\\\\.venv\\\\Scripts\\\\python.exe\" -m pip install \"django-parler>=2.3\" \"Pillow>=10.0\" 2>&1)",
+      "mcp__ide__getDiagnostics",
+      "PowerShell(git -C $repo log -5 --oneline)",
+      "PowerShell(git -C $repo status --short)",
+      "PowerShell(git -C $repo diff --stat HEAD -- backend/)",
+      "PowerShell($repo = \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\")",
+      "PowerShell(git -C $repo log -3 --oneline)",
+      "PowerShell(git -C $repo reflog -10)",
+      "PowerShell(git -C $repo show HEAD --stat --oneline)",
+      "PowerShell(Get-ChildItem -Recurse -Depth 2 backend, frontend -Force | Where-Object { -not $_.PSIsContainer -or $_.Name -notmatch '\\(node_modules|__pycache__|\\\\.venv|venv|dist|\\\\.angular\\)' } | Select-Object Mode, FullName -First 100)",
+      "PowerShell(Get-ChildItem backend\\\\sites_core -Force | Where-Object { -not $_.PSIsContainer -or $_.Name -notmatch '__pycache__' } | Select-Object Mode, Name)",
+      "PowerShell(Get-ChildItem backend\\\\tests -Force | Select-Object Name; Write-Output '---'; Get-ChildItem backend\\\\sites_core\\\\management -Recurse -Force | Where-Object { $_.Name -notmatch '__pycache__' } | Select-Object FullName)",
+      "PowerShell(Get-ChildItem .claude -Force -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName)",
+      "PowerShell(git commit *)",
+      "Bash(npm --version)",
+      "Bash(npx --version)",
+      "PowerShell(npm *)",
+      "PowerShell(npx --yes @angular/cli@latest new writing-frontend --directory=frontend --routing --style=scss --ssr --strict --skip-git --package-manager=npm --defaults)",
+      "PowerShell(Set-Location \"D:\\\\multi-tenant-django-angular\\\\multi-tenant-writing\\\\frontend\"; \\(Get-Content package.json | ConvertFrom-Json\\).dependencies | Select-Object '@ngx-translate/core','@ngx-translate/http-loader' | Format-List)"
     ]
   }
 }
