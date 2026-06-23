@@ -693,3 +693,58 @@ A few patterns that pay off across the whole project:
 **When stuck, downscope.** If Claude Code keeps producing broken code for a complex prompt, the prompt is too big. Strip it down to the smallest version of the same idea that could possibly work, get *that* green, then iterate up.
 
 **Don't merge what you don't understand.** Especially in Phase 4 (VPS) — running a command you don't understand on your own server is how you end up with a broken VPS at 2am. If a command in a Phase 4 prompt is opaque, ask Claude Code to explain it before running.
+
+---
+
+## Addendum — Category model retrofit
+
+The Category model was added to architecture-v4.docx and requirements-v4.docx after several Phase 1 and Phase 2 prompts had already been executed. The single prompt below threads Category end-to-end through the existing codebase — model, migration, admin, API, serializers, seed data, tests, and the relevant frontend pieces. Run it once the rest of Phase 1 (and ideally 2) is in place.
+
+### A.1 Add Category model across backend and frontend
+
+**Scope.** Introduce the Category model into a codebase that already has Site, Author, Post, and Page implemented. Existing Posts will start with `category = NULL` and be tidied in the admin afterwards. Category tabs in the writings list are explicitly *not* part of this work — only the data model, admin, API, and small-label rendering.
+
+**Learning goal.** Schema retrofit on a live codebase: adding a nullable FK without breaking existing rows, extending admin and API surfaces without regression, and updating both the post serializer and the SSR rendering chain to surface a new field. Also: writing a single migration that creates a model and adds a FK to an existing table at the same time, and keeping tests passing while the new column starts life empty.
+
+**Prompt.**
+> The Category model was added to architecture-v4.docx (§3.2 data-model table, §3.2 "Why Category exists in v1", §4.2 API surface, §4.4 test bullet) and requirements-v4.docx (§3.1 field list and new bullet, §3.4 deferred-tabs note, §5 data model). Several earlier playbook prompts — 1.2, 1.4, 1.5, 1.6, plus Phase 2 frontend prompts — already ran without Category. Please retrofit it end-to-end. Work in the order below and stop after the backend block (steps 1–7) so I can run the tests before you start the frontend block.
+>
+> **Backend**
+> 1. **Model.** Add `Category` to `content/models.py`: `name` (translatable via django-parler — alexandrapintea categories will carry EN and RO labels, Roam categories will only carry EN, and parler handles missing translations gracefully), `slug` (SlugField, not translated — slugs are language-agnostic for admin URLs, with `unique_together = ("site", "slug")`), `site` (FK to Site, `on_delete=CASCADE`). Add a `category` field to `Post`: `ForeignKey(Category, null=True, blank=True, on_delete=SET_NULL, related_name="posts")`. Produce both changes in a single `makemigrations` call and show me the generated migration file before applying.
+> 2. **Cross-site constraint.** Prevent a Post from linking to a Category whose Site is not in the Post's `sites` M2M. The architecture doc calls this out in §4.4 ("a Post can only link to a Category that belongs to one of the Post's target sites"). Implement it as a model `clean()` plus a serializer-level validator — explain whether a database CheckConstraint is also feasible given that one side of the constraint is an M2M (it's not straightforward; explain why).
+> 3. **Admin.** Register `CategoryAdmin` extending `SiteScopedAdmin` (admin_scoped/admin.py). Add `category` to `PostAdmin.list_display`, `list_filter`, and the fieldsets. The `category` dropdown on the Post change form must be filtered by `formfield_for_foreignkey` to only show categories whose Site overlaps with the Post's currently-selected `sites`. Explain how you handle the chicken-and-egg here — on a brand-new Post the `sites` M2M isn't saved yet when the dropdown first renders, so the filter has to fall back to "all sites the editing user has access to via SiteScopedAdmin."
+> 4. **API.** Add `GET /api/categories/` per architecture §4.2 — list categories for the current site (resolved from Host header / X-Site-Domain via the existing Site middleware), read-only, ordered by name, with `?lang=` translation handling matching the post list. Update the Post serializer (list and detail) to embed `category: { slug, name } | null` inline rather than just the slug — saves the frontend a round trip for the labels on post cards at the cost of a tiny payload bump. Explain the trade-off.
+> 5. **Seed data.** Extend the existing `seed_demo_data` management command to create three categories per site ("Essay", "Fiction", "Notes" — translate the alexandrapintea ones to "Eseu", "Ficțiune", "Însemnări" in RO) and attach each existing demo post to one. Keep the command idempotent — re-running must not duplicate categories or change existing post-category assignments.
+> 6. **Tests.** In `backend/tests/`, add:
+>    - `test_category_isolation.py` — log in as `roam_editor` and assert zero alexandrapintea categories in the admin list view, search endpoint, and the Post.category dropdown.
+>    - Extend `test_api_filtering.py` (or add `test_api_categories.py`) — `GET /api/categories/` returns only the current site's categories, respects `?lang=`, and the embedded category data appears on both the post list and post detail serializers.
+>    - Add a test asserting the cross-site Category constraint fires: attempting to attach an alexandrapintea Category to a Roam-only Post raises `ValidationError`.
+> 7. **Existing data.** Do not backfill `category` in the migration — existing rows stay `NULL` and I'll clean them up in the admin. Confirm with a quick check that the API and admin handle `category = NULL` gracefully (no 500s, the serializer field returns `null`, the admin list shows an em dash or empty cell).
+>
+> **Stop here. I will run `pytest`, walk the admin, and confirm the migration applied cleanly before continuing.**
+>
+> **Frontend**
+> 8. **TypeScript interfaces.** Update the `Post` interface in the content slice to include `category: { slug: string; name: string } | null`. Add a `Category` interface for completeness even though the categories list endpoint isn't consumed in v1.
+> 9. **Content slice decision.** Do *not* add a separate `categories` entity collection to the classic NgRx content slice — the embedded category on posts covers v1's needs (small labels on cards). Leave a code comment explaining the decision and pointing at the `/api/categories/` endpoint as the integration point if filtering or tabs are added later.
+> 10. **Post card.** Render the category label on the post card component used by the homepage "Recent writing" block and the writings list. Per requirements §3.4: small inline label, no tab UI, no separate route. Style it as a category chip near the date.
+> 11. **Post detail.** Show the category label near the title and date on the post detail page, same visual treatment as the card.
+> 12. **Null safety.** If `post.category` is `null`, the label space collapses cleanly — no empty box, no placeholder text, no awkward separators.
+> 13. **Jest.** Add a unit test for the post card component asserting the label renders with the correct text when category is set and is absent from the DOM when null. Use a signal input mock for the post data.
+> 14. **Playwright.** Extend `smoke.spec.ts` (or whichever e2e covers the writings list) to assert the category label appears on a seeded post with a category and is absent on one without. Run against both domains.
+>
+> **Explicitly out of scope:**
+> - Category tabs in the writings list (deferred per requirements §3.4).
+> - A `/writings/category/<slug>` route or any URL filtering by category.
+> - `?category=` filtering on the post list API.
+> - Making `category` required on Post — stays nullable until existing content is migrated.
+> - i18n of the slug — slugs remain ASCII and language-agnostic.
+>
+> Explain each significant choice as you go. After the frontend block, summarise what changed in a short commit message I can use verbatim.
+
+**Verify.**
+
+Backend: `python manage.py makemigrations` produces one migration containing both the new Category table and the Post.category column; `migrate` applies cleanly against the existing database. `pytest -v` passes including the new category tests. Log into the admin as `roam_editor@example.com` and confirm the Categories list shows zero alexandrapintea rows and the Post.category dropdown only offers Roam categories. From a Django shell, attempt to attach an alexandrapintea Category to a Roam-only Post and confirm `ValidationError` fires.
+
+Frontend: `npm run test` passes. `npm run dev` (or the compose dev stack) renders the category label on seeded post cards and on the post detail page. A post with `category = NULL` renders without a phantom empty label or stray separator. `npx playwright test smoke.spec.ts` passes against both domains.
+
+Manual end-to-end: load `/admin/content/category/`, add a new category on each site, attach it to one of the existing Squarespace-imported posts, and confirm it appears as a small label on the public site after refresh. Try (from the DRF browsable API or a Django shell) to attach an alexandrapintea Category to a Roam post — the constraint must reject it.

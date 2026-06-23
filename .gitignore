@@ -47,3 +47,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 Desktop.ini
+/docs/~$chitecture-v4.docx
+/docs/requirements-v3.docx
+/docs/requirements-v4.docx

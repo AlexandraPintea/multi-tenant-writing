@@ -1,0 +1,11 @@
+// Fallback values for theme custom properties.
+// Real values are written to document.documentElement at runtime by the
+// site-config SignalStore after /api/site-config/ resolves. These defaults
+// prevent a flash of unstyled content before that response lands.
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --accent: #b94a48;
+  --font-body: 'Georgia', 'Times New Roman', serif;
+  --font-display: 'Helvetica Neue', 'Arial', sans-serif;
+}
