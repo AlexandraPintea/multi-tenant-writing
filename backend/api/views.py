@@ -71,14 +71,19 @@ class PostListView(ListAPIView):
                 is_published=True,
                 translations__language_code=lang,
             )
-            .select_related("author")
-            .prefetch_related("translations")
+            .prefetch_related("translations", "authors__site")
             .distinct()
             .order_by("-published_at")
         )
 
     def get_serializer_context(self):
-        return {**super().get_serializer_context(), "lang": resolve_lang(self.request)}
+        return {
+            **super().get_serializer_context(),
+            "lang": resolve_lang(self.request),
+            # The embedded author depends on who is asking — see
+            # PostListSerializer.get_author.
+            "site": self.request.site,
+        }
 
 
 class PostDetailView(APIView):
@@ -86,7 +91,7 @@ class PostDetailView(APIView):
         # 1. Site/publication scope: a post not published to this site is a
         #    plain 404 (DRF's get_object_or_404 -> standard {"detail": ...}).
         post = get_object_or_404(
-            Post.objects.prefetch_related("translations").select_related("author"),
+            Post.objects.prefetch_related("translations", "authors__site"),
             slug=slug,
             sites=request.site,
             is_published=True,
@@ -97,7 +102,11 @@ class PostDetailView(APIView):
         if lang not in available:
             raise PostNotAvailableInLanguage(available_languages=available)
 
-        return Response(PostDetailSerializer(post, context={"lang": lang}).data)
+        return Response(
+            PostDetailSerializer(
+                post, context={"lang": lang, "site": request.site}
+            ).data
+        )
 
 
 class AuthorListView(ListAPIView):
@@ -120,15 +129,21 @@ class AuthorDetailView(APIView):
             site=request.site,
         )
         lang = resolve_lang(request)
+        # `posts` is the reverse of Post.authors, so this now returns the
+        # cross-posted pieces this site's profile is attached to as well.
         author_posts = (
             author.posts.filter(sites=request.site, is_published=True)
-            .select_related("author")
-            .prefetch_related("translations")
+            .prefetch_related("translations", "authors__site")
             .distinct()
             .order_by("-published_at")
         )
         data = AuthorDetailSerializer(
-            author, context={"lang": lang, "author_posts": author_posts}
+            author,
+            context={
+                "lang": lang,
+                "site": request.site,
+                "author_posts": author_posts,
+            },
         ).data
         return Response(data)
 
