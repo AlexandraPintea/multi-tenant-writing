@@ -279,23 +279,26 @@ A few ground rules to get learning value out of working with Claude Code:
 
 **Verify.** Click the toggle button; the demo string switches between English and Romanian. Refresh; the choice persists. View source on SSR'd HTML and confirm there are no `localStorage is not defined` errors in the server log.
 
-### 2.4 Classic NgRx for the content slice
+### 2.4 NGXS for the content slice
 
-**Scope.** A classic NgRx slice for posts, authors, and pages, with @ngrx/entity, effects for HTTP, and selectors for cached navigation.
+> **Changed from the original plan.** This step originally specified classic NgRx (actions / reducers / effects / selectors with `@ngrx/entity`). NGXS was chosen instead; requirements §4.2 and architecture §5.3 carry the same revision. Two consequences worth knowing before starting: pin `@ngxs/store@21`, because the current major (22) requires Angular 22 and this project is on 21; and there is no first-party entity adapter, so the normalised collection is hand-rolled.
 
-**Learning goal.** Actions, reducers, effects, selectors, @ngrx/entity adapter, the *why* of classic NgRx versus simpler patterns.
+**Scope.** An NGXS state slice for posts, authors, and pages, with HTTP in the action handlers and parameterised selectors for cached navigation.
+
+**Learning goal.** NGXS state classes, `@Action` handlers, `createSelector`, and the structural difference from NgRx: NGXS collapses the reducer and the effect into one handler, so there is no separate effects file and no success/failure action *required* to update state. The trade-off is fewer moving parts but less separation between "what happened" and "what changes".
 
 **Prompt.**
-> Install @ngrx/store, @ngrx/effects, @ngrx/entity, @ngrx/store-devtools. Build a classic NgRx feature slice for content at /frontend/src/app/stores/content/:
-> 1. content.actions.ts: loadPostList, loadPostListSuccess, loadPostListFailure, loadPostDetail (parameters: slug, lang), and equivalents for authors and pages.
-> 2. content.reducer.ts: use @ngrx/entity's createEntityAdapter for the posts collection. Key by slug. Add a `loadedLangs` set so we don't re-fetch when we already have a post in the requested language.
-> 3. content.effects.ts: HTTP calls via HttpClient, with proper error handling. Critical: a 404 with `available_languages` in the body is not a fatal error — it should dispatch a typed action `loadPostDetailNotInLanguage` carrying the slug + available languages, so the UI can render a useful fallback.
-> 4. content.selectors.ts: selectPostList (filtered by current lang), selectPostBySlug, selectPostLoadState.
-> 5. Wire providers in app.config.ts: provideStore, provideEffects, provideStoreDevtools.
+> Install `@ngxs/store@21` and `@ngxs/devtools-plugin@21` (pin to 21 — the current major needs Angular 22). Build an NGXS feature slice for content at `/frontend/src/app/stores/content/`:
+> 1. `content.models.ts`: interfaces mirroring `backend/api/serializers.py` — Post (with `author` and `category` both nullable, and `available_languages`), Author, Page, and a Paginated<T> wrapper.
+> 2. `content.actions.ts`: action classes with static `type` strings — LoadPostList, LoadPostDetail (slug, lang), the author and page equivalents, and ClearContent. Include a typed **LoadPostDetailNotInLanguage** carrying slug + lang + availableLanguages.
+> 3. `content.state.ts`: a `@State` class whose `@Action` handlers do the HTTP. Cache **nested by language** (`postsByLang[lang][slug]`), not by slug alone — the same slug carries different title/body per language, so a flat key would have each language switch overwrite the other and the cache guard would then serve the wrong text. Track `loadedListLangs` and `loadedDetailLangs` so a revisit does not refetch.
+> 4. Critical: a 404 whose body carries `available_languages` is **not** a failure. Record the languages in state and dispatch LoadPostDetailNotInLanguage so the UI can render "this piece is only available in English". A 404 without that key is a genuine failure — the post is not published to this site, and offering a language switch would be a dead end. Once the store knows a post lacks a language, it must not ask again.
+> 5. `content.selectors.ts`: language-parameterised selectors via `createSelector` — selectPostList, selectPostBySlug, selectAvailableLanguages, selectIsNotInLanguage, plus author/page equivalents.
+> 6. Wire `provideStore([ContentState], withNgxsReduxDevtoolsPlugin(...))` in app.config.ts, with devtools disabled in production.
 >
-> Explain the trade-off: this slice has 5 files and ~150 lines; the SignalStore equivalent would be ~30 lines. Why is classic NgRx the right call for content but not for siteConfig?
+> Explain what NGXS gives up relative to classic NgRx here, and why the content slice still deserves explicit actions when siteConfig and language are SignalStores.
 
-**Verify.** Hit `dispatch(loadPostList({ lang: 'en' }))` from a component or from the Redux DevTools. The store should populate. Re-dispatch with the same lang — confirm no second HTTP request fires (look at the Network tab and at the reducer's `loadedLangs` guard).
+**Verify.** `npx ng test --watch=false` — the state spec should cover: the list populates in API order; a second dispatch for the same language fires no HTTP; a different language *does* fetch; both languages coexist without overwriting each other; a 404 with the hint dispatches LoadPostDetailNotInLanguage and sets `availableLanguages`; a 404 without it dispatches the failure action instead; and a known-missing language is never re-requested. Then dispatch from the Redux DevTools against the running stack and watch the timeline.
 
 ### 2.5 Routing per site (editorial vs. grid layout)
 
