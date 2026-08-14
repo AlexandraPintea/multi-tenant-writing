@@ -71,11 +71,16 @@ export const SiteConfigStore = signalStore(
           })
           .subscribe({
             next: (config) => patchState(store, { config, loading: false }),
-            error: (err) =>
+            error: (err) => {
+              // Also log: without this the failure is invisible, and a failed
+              // load during SSR just renders the fallback theme and default
+              // language as if nothing were wrong.
+              console.error('[SiteConfigStore] /api/site-config/ failed:', err);
               patchState(store, {
                 loading: false,
                 error: err?.message ?? 'Failed to load site config',
-              }),
+              });
+            },
           });
       },
     };
