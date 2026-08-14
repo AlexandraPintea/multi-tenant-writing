@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -9,6 +9,7 @@ import { withNgxsReduxDevtoolsPlugin } from '@ngxs/devtools-plugin';
 
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
+import { siteDomainInterceptor } from './core/site-domain';
 import { ContentState } from './stores/content/content.state';
 import { LanguageStore } from './stores/language.store';
 import { SiteConfigStore } from './stores/site-config.store';
@@ -16,7 +17,10 @@ import { SiteConfigStore } from './stores/site-config.store';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    // withComponentInputBinding lets route params and route data arrive as
+    // signal inputs (PostDetail.slug, StaticPage.pageSlug) instead of each
+    // component injecting ActivatedRoute and unpacking it by hand.
+    provideRouter(routes, withComponentInputBinding()),
     SiteConfigStore,
     LanguageStore,
     // Content is the one slice with real side effects — HTTP, error handling
@@ -24,7 +28,7 @@ export const appConfig: ApplicationConfig = {
     // action/handler/selector treatment rather than another SignalStore.
     provideStore([ContentState], withNgxsReduxDevtoolsPlugin({ disabled: environment.production })),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([siteDomainInterceptor])),
     provideTranslateService({
       fallbackLang: 'en',
       lang: 'en',

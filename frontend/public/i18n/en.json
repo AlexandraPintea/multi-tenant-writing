@@ -4,5 +4,24 @@
     "authors": "Authors",
     "about": "About",
     "contact": "Contact"
+  },
+  "home": {
+    "recent": "Recent writing",
+    "allWritings": "All writings",
+    "collective": "The collective"
+  },
+  "writings": {
+    "title": "Writings"
+  },
+  "authors": {
+    "title": "Authors"
+  },
+  "post": {
+    "notInLanguage": "This piece is only available in {{languages}}.",
+    "readIn": "Read it in {{language}}"
+  },
+  "common": {
+    "nothingYet": "Nothing here yet.",
+    "notFound": "Not found."
   }
 }

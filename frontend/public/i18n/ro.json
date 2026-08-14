@@ -4,5 +4,24 @@
     "authors": "Autori",
     "about": "Despre",
     "contact": "Contact"
+  },
+  "home": {
+    "recent": "Texte recente",
+    "allWritings": "Toate textele",
+    "collective": "Colectivul"
+  },
+  "writings": {
+    "title": "Texte"
+  },
+  "authors": {
+    "title": "Autori"
+  },
+  "post": {
+    "notInLanguage": "Acest text este disponibil doar în {{languages}}.",
+    "readIn": "Citește în {{language}}"
+  },
+  "common": {
+    "nothingYet": "Încă nimic aici.",
+    "notFound": "Nu a fost găsit."
   }
 }

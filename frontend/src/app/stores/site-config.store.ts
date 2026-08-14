@@ -1,4 +1,4 @@
-import { computed, effect, inject, PLATFORM_ID, REQUEST } from '@angular/core';
+import { computed, effect, inject, PLATFORM_ID } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import {
@@ -35,21 +35,6 @@ const initialState: SiteConfigState = {
   error: null,
 };
 
-/**
- * The active tenant is identified by domain. In the browser that's the live
- * host; during SSR there is no `window`, so we read the inbound request's Host
- * header (the REQUEST token, populated by @angular/ssr) and forward it as
- * X-Site-Domain — the same header the middleware prefers over Host.
- */
-function resolveSiteDomain(): string {
-  const platformId = inject(PLATFORM_ID);
-  if (isPlatformBrowser(platformId)) {
-    return window.location.host;
-  }
-  const request = inject(REQUEST, { optional: true });
-  return request?.headers.get('host') ?? '';
-}
-
 export const SiteConfigStore = signalStore(
   withState(initialState),
   withComputed(({ config }) => ({
@@ -60,28 +45,33 @@ export const SiteConfigStore = signalStore(
   })),
   withMethods((store) => {
     const http = inject(HttpClient);
-    const siteDomain = resolveSiteDomain();
 
     return {
+      /**
+       * Fetch once. Route resolvers call this on every navigation to make sure
+       * the tenant is known before they dispatch, so repeat calls must not
+       * re-hit the API or restart an in-flight request.
+       */
       loadSiteConfig(): void {
+        if (store.config() !== null || store.loading()) {
+          return;
+        }
         patchState(store, { loading: true, error: null });
-        http
-          .get<SiteConfig>(`${environment.API_BASE_URL}/site-config/`, {
-            headers: { 'X-Site-Domain': siteDomain },
-          })
-          .subscribe({
-            next: (config) => patchState(store, { config, loading: false }),
-            error: (err) => {
-              // Also log: without this the failure is invisible, and a failed
-              // load during SSR just renders the fallback theme and default
-              // language as if nothing were wrong.
-              console.error('[SiteConfigStore] /api/site-config/ failed:', err);
-              patchState(store, {
-                loading: false,
-                error: err?.message ?? 'Failed to load site config',
-              });
-            },
-          });
+        // X-Site-Domain is added by siteDomainInterceptor, so every API call
+        // carries it — not just this one.
+        http.get<SiteConfig>(`${environment.API_BASE_URL}/site-config/`).subscribe({
+          next: (config) => patchState(store, { config, loading: false }),
+          error: (err) => {
+            // Also log: without this the failure is invisible, and a failed
+            // load during SSR just renders the fallback theme and default
+            // language as if nothing were wrong.
+            console.error('[SiteConfigStore] /api/site-config/ failed:', err);
+            patchState(store, {
+              loading: false,
+              error: err?.message ?? 'Failed to load site config',
+            });
+          },
+        });
       },
     };
   }),
