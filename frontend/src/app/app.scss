@@ -1,0 +1,15 @@
+// Playbook 2.3 demo strip only — removed when 2.6 lands the real toggle.
+.language-demo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-body);
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+
+  &__active {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+}
