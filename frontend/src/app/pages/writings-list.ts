@@ -1,9 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { SeoService } from '../core/seo';
 import { postListOf, selectContentSlice } from '../stores/content/content.selectors';
 import { LanguageStore } from '../stores/language.store';
 
@@ -66,6 +68,37 @@ import { LanguageStore } from '../stores/language.store';
 export class WritingsList {
   private readonly content = inject(Store).selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
+  private readonly translate = inject(TranslateService);
+  private readonly seo = inject(SeoService);
 
   protected readonly posts = computed(() => postListOf(this.content(), this.language()));
+
+  /**
+   * stream(), not instant().
+   *
+   * instant() returns the fallback when the target language file has not
+   * finished loading, and switching language starts an async load — so the
+   * Romanian archive rendered `<title>Writings</title>`. stream() re-emits both
+   * on language change and once the file arrives.
+   */
+  private readonly seoTitle = toSignal(this.translate.stream('writings.title'), {
+    initialValue: '',
+  });
+  private readonly seoDescription = toSignal(this.translate.stream('writings.description'), {
+    initialValue: '',
+  });
+
+  constructor() {
+    effect(() => {
+      const title = this.seoTitle();
+      if (!title) {
+        return;
+      }
+      this.seo.apply({
+        title,
+        description: this.seoDescription(),
+        path: '/writings',
+      });
+    });
+  }
 }

@@ -19,6 +19,30 @@ export function resolveSiteDomain(): string {
 }
 
 /**
+ * Absolute origin of the current tenant, e.g. https://alexandrapintea.eu.
+ *
+ * Needed by anything that has to emit a URL a *stranger* will resolve —
+ * og:url, canonical links — where a relative path is useless.
+ *
+ * The scheme is inferred from the host rather than read from
+ * X-Forwarded-Proto, because Angular's SSR strips x-forwarded-* headers unless
+ * `trustProxyHeaders` is configured, so the header is not reliably there. Local
+ * hosts are http, everything else https — which is true here, since nginx
+ * redirects 80 to 443 for both domains (architecture §6.3).
+ */
+export function resolveSiteOrigin(): string {
+  if (isPlatformBrowser(inject(PLATFORM_ID))) {
+    return window.location.origin;
+  }
+  const host = inject(REQUEST, { optional: true })?.headers.get('host') ?? '';
+  if (!host) {
+    return '';
+  }
+  const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  return `${isLocal ? 'http' : 'https'}://${host}`;
+}
+
+/**
  * Stamps X-Site-Domain on every call to our API.
  *
  * An interceptor rather than a header on each request, because forgetting it is
