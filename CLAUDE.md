@@ -108,7 +108,11 @@ python -m black .
 
 Scaffolded (playbook 2.1) at `frontend/`: **Angular 21**, standalone throughout, SSR via `src/server.ts`, ngx-translate with `public/i18n/{en,ro}.json`, and `src/styles/_variables.scss` holding fallback theme custom properties. `SiteConfigStore` (`src/app/stores/site-config.store.ts`, playbook 2.2) is an `@ngrx/signals` store that fetches `/api/site-config/` and applies the theme to `document.documentElement` — guarded by `isPlatformBrowser`, since that effect is meaningless during SSR. It resolves the tenant from `window.location.host` in the browser and from the `REQUEST` token's Host header on the server, forwarded as `X-Site-Domain`.
 
-Still to build: 2.3 language store, 2.4 classic NgRx content slice, 2.5 routes/layouts, 2.6 EN/RO toggle, 2.7 Open Graph meta, 2.9 Playwright. Don't add Angular files outside `frontend/`, and don't introduce NgModules — the project is standalone-only by design.
+Still to build: 2.5 routes/layouts, 2.6 EN/RO toggle, 2.7 Open Graph meta, 2.9 Playwright.
+
+**State management is three slices across two libraries.** `SiteConfigStore` and `LanguageStore` are `@ngrx/signals` SignalStores. Content is **NGXS** (`src/app/stores/content/`), not classic NgRx — the docs were amended in red (requirements §4.2, architecture §5.3) when that was decided. Pin `@ngxs/store` and `@ngxs/devtools-plugin` to **21**: the current major needs Angular 22, so NGXS and Angular have to be upgraded together. There is no first-party entity adapter, so the post collection is hand-rolled and **nested by language** (`postsByLang[lang][slug]`) — one slug carries different text per language, so a flat slug key would let a language switch overwrite the other copy and the cache guard would then serve the wrong text.
+
+In NGXS the HTTP lives in the `@Action` handler, so `content.state.ts` is what NgRx would split into a reducer plus an effect. The 404-with-`available_languages` contract survives the switch: it dispatches `LoadPostDetailNotInLanguage`, never the failure action, and once the store knows a post lacks a language it does not ask again. Don't add Angular files outside `frontend/`, and don't introduce NgModules — the project is standalone-only by design.
 
 Two open frontend decisions, both worth settling before 2.5 and 2.8:
 - **Layout key mismatch.** `seed_demo_data` writes `"layout": "collective"` for roamliterary.com, but playbook 2.5 switches on `layout === 'grid'`. Pick one before writing the layout switch.
