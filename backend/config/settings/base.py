@@ -121,11 +121,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
-# CORS: the browser never calls Django directly in v1, but ng serve (4200) and
-# the SSR dev server (4000) do during development. Production will narrow this
-# to the SSR container's internal origin (see architecture §7.1).
-CORS_ALLOWED_ORIGINS = config(
-    "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:4200,http://localhost:4000",
-    cast=Csv(),
-)
+# CORS: no origin is trusted by default. Development adds its own in
+# settings/local.py; production must name the SSR container's origin explicitly
+# via the environment (architecture §7.1).
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="", cast=Csv())

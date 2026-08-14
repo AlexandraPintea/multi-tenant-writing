@@ -748,3 +748,52 @@ Backend: `python manage.py makemigrations` produces one migration containing bot
 Frontend: `npm run test` passes. `npm run dev` (or the compose dev stack) renders the category label on seeded post cards and on the post detail page. A post with `category = NULL` renders without a phantom empty label or stray separator. `npx playwright test smoke.spec.ts` passes against both domains.
 
 Manual end-to-end: load `/admin/content/category/`, add a new category on each site, attach it to one of the existing Squarespace-imported posts, and confirm it appears as a small label on the public site after refresh. Try (from the DRF browsable API or a Django shell) to attach an alexandrapintea Category to a Roam post — the constraint must reject it.
+
+---
+
+## Addendum — Post/Author cross-posting fix
+
+Found while verifying the 1.5 endpoints against a live server: `GET /api/authors/alexandra-pintea/` on roamliterary.com returns **zero posts**, even though the cross-posted piece appears in Roam's writings list. `Post.author` is a single FK, and a cross-posted post can only point at one site's `Author` row — so the other site's author page is permanently empty, and that site's post cards render the *foreign* site's author name and slug. Roam is a collective whose author pages are a core requirement (requirements §2.2), so this has to be fixed before Phase 2 builds UI on top of it.
+
+Run A.2 and A.1 in the same sitting and both **before 1.6** — they retrofit relations onto `Post`, need the same cross-site validator, and touch the same admin, serializer, and test surfaces. Writing the 1.6 fixtures once, against the final shape, is the whole point.
+
+### A.2 Migrate Post.author from FK to a per-site Author M2M
+
+**Scope.** Replace `Post.author` (FK) with `Post.authors` (M2M to Author), carrying at most one Author per target site — the per-site profile the piece appears under on that site. Existing rows migrate without loss. No `Person` identity table, no co-author UI.
+
+**Learning goal.** Converting a ForeignKey to a ManyToManyField on a table that already has data: why it takes three migration operations rather than an `AlterField`, how to write the `RunPython` that copies the old column into the join table (and its reverse), and why the integrity rules land in `clean()` plus a serializer validator instead of a database constraint. Also: how a relation change ripples outward through admin widgets, serializer context, and N+1 query behaviour.
+
+**Prompt.**
+> `Post.author` is a ForeignKey to `Author`, but `Author` is FK-to-Site (one profile per tenant) while `Post` is M2M-to-Site. A post cross-posted to both sites therefore points at exactly one site's Author row, and the other site's author detail page lists none of that person's work. Migrate `Post.author` to `Post.authors`, an M2M to `Author`. Work in the order below and stop after the backend block so I can run the tests.
+>
+> **Backend**
+> 1. **Model.** Add `authors = models.ManyToManyField("people.Author", related_name="posts", blank=True)` to `content/models.py`. Keep `related_name="posts"` — `AuthorDetailView` in `api/views.py` already does `author.posts.filter(sites=request.site, is_published=True)` and should need no change at all. Confirm that's true rather than assuming it.
+> 2. **Migration.** Produce this as three operations: `AddField` for `authors`, a `RunPython` that copies each row's existing `author_id` into the join table, then `RemoveField` for `author`. Write the reverse function too (collapse the M2M back to a single FK, picking a deterministic row) so the migration is reversible. Show me the migration file before applying it, and explain why this can't be an `AlterField`.
+> 3. **Integrity rules.** Two of them, in `Post.clean()` and mirrored as a serializer-level validator: (a) every Author attached to a Post must belong to one of the Post's target sites; (b) a Post carries at most one Author per site. Explain why neither can be a database `CheckConstraint` — same reasoning as the Category rule in A.1, since one side is an M2M. Explain also what happens if someone removes a Site from `post.sites` while an Author for that site is still attached, and decide whether `clean()` should reject that or silently drop the Author.
+> 4. **Admin.** In `content/admin.py`, replace `author` with `authors` in `PostAdmin` (use `filter_horizontal` or `autocomplete_fields` — pick one and say why). Add `"authors"` to `site_scoped_relations` in `admin_scoped/admin.py:SiteScopedAdmin`; the existing `formfield_for_manytomany` override should then scope the widget with no other change. Update `list_display` so the author column still reads sensibly when a post has two profiles attached.
+> 5. **API.** In `api/serializers.py`, the embedded `author` on the post list and detail payloads must become the Author matching the **requesting site**, not an arbitrary one. The views already thread `lang` through serializer context — thread `site` the same way. The field is now nullable: a post cross-posted to a site where that person has no profile serializes `author: null`. Add the `prefetch_related` needed to keep the list endpoint from going N+1, and show me the query count before and after.
+> 6. **Seed data.** Update `seed_demo_data` so the bilingual cross-posted piece is attached to **both** Author rows (the alexandrapintea.eu one and the Roam one) and the English-only piece to the alexandrapintea.eu row only. Keep the command idempotent.
+> 7. **Tests.** Add to `backend/tests/`: the Roam author detail endpoint includes the cross-posted piece; the post-list payload on roamliterary.com carries the *Roam* Author's name and slug, not the alexandrapintea.eu one (this is the bug that motivated the change, so assert it directly); attaching an Author whose site is not among the Post's target sites raises `ValidationError`; attaching two Authors from the same site raises `ValidationError`; a post with no Author for the requesting site serializes `author: null` without a 500.
+>
+> **Stop here. I will run `pytest` and walk the admin before you continue.**
+>
+> **Frontend**
+> 8. **TypeScript.** The `Post` interface's `author` becomes `{ name: string; slug: string } | null`. This is the only breaking change on the frontend — the shape is otherwise identical.
+> 9. **Null safety.** Post cards, the post detail byline, and any author link must collapse cleanly when `author` is `null` — no empty byline, no dangling separator, no link to `/authors/undefined`.
+> 10. **Jest.** One test per surface asserting the byline renders with a set author and is absent when `null`.
+>
+> **Explicitly out of scope:**
+> - A `Person` / author-identity table spanning sites. Rejected deliberately: it introduces a shared cross-tenant table and costs the single-queryset-filter isolation that §3.3 depends on.
+> - Matching authors across sites by slug. Slugs are URL conveniences, not identity keys.
+> - Co-author display. The M2M holds one Author *per site*, so each site still renders exactly one byline.
+> - Backfilling profiles: if a person has no Author row on one of a post's sites, that's `null`, not an error.
+>
+> Explain each significant choice as you go, and give me a commit message I can use verbatim.
+
+**Verify.**
+
+Backend: the migration applies cleanly against the existing database and `migrate <app> <previous>` rolls it back without error. `pytest -v` passes. `curl -s -H "X-Site-Domain: roamliterary.com" localhost:8001/api/authors/alexandra-pintea/` now lists the cross-posted piece, and the same endpoint on alexandrapintea.eu still lists both pieces. `curl -s -H "X-Site-Domain: roamliterary.com" localhost:8001/api/posts/` shows the Roam Author's slug on the cross-posted card. From a Django shell, attaching an alexandrapintea Author to a Roam-only Post raises `ValidationError`.
+
+Admin: as `roam_editor@example.com`, the Post authors widget offers only Roam Author rows; as superuser, both sites' rows are offered.
+
+Frontend: `npm run test` passes; a post whose author is `null` renders without a phantom byline.
