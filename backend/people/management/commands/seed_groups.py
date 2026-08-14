@@ -11,6 +11,7 @@ from sites_core.models import Site
 MANAGED_MODELS = [
     ("content", "post"),
     ("content", "page"),
+    ("content", "category"),
     ("people", "author"),
 ]
 

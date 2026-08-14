@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from content.models import Page, Post
+from content.models import Category, Page, Post
 from people.models import Author
 from sites_core.models import Site
 
@@ -12,6 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self._seed_sites()
         self._seed_authors()
+        self._seed_categories()
         self._seed_posts()
         self._seed_pages()
         self.stdout.write(self.style.SUCCESS("Demo data seeded."))
@@ -82,6 +83,37 @@ class Command(BaseCommand):
         self.roam_author.save()
         self.stdout.write("  authors ok")
 
+    # ------------------------------------------------------------- categories
+
+    def _seed_categories(self):
+        # (slug, EN, RO) — Roam is an English-only site, so its categories
+        # carry the EN label only and parler handles the missing RO row.
+        specs = [
+            ("essay", "Essay", "Eseu"),
+            ("fiction", "Fiction", "Ficțiune"),
+            ("notes", "Notes", "Însemnări"),
+        ]
+
+        self.ap_categories = {}
+        self.roam_categories = {}
+        for slug, name_en, name_ro in specs:
+            ap_category, _ = Category.objects.get_or_create(site=self.ap, slug=slug)
+            ap_category.set_current_language("en")
+            ap_category.name = name_en
+            ap_category.save()
+            ap_category.set_current_language("ro")
+            ap_category.name = name_ro
+            ap_category.save()
+            self.ap_categories[slug] = ap_category
+
+            roam_category, _ = Category.objects.get_or_create(site=self.roam, slug=slug)
+            roam_category.set_current_language("en")
+            roam_category.name = name_en
+            roam_category.save()
+            self.roam_categories[slug] = roam_category
+
+        self.stdout.write("  categories ok")
+
     # ------------------------------------------------------------------ posts
 
     def _seed_posts(self):
@@ -116,6 +148,11 @@ class Command(BaseCommand):
         # One Author per target site — this is the cross-posting case the M2M
         # exists for: the piece appears under a different profile on each site.
         bilingual.authors.set([self.ap_author, self.roam_author])
+        # Only fill an empty category: re-running must not stomp an assignment
+        # made by hand in the admin.
+        if bilingual.category_id is None:
+            bilingual.category = self.ap_categories["essay"]
+            bilingual.save(update_fields=["category"])
 
         # English-only post published only on alexandrapintea.eu
         en_only, _ = Post.objects.get_or_create(
@@ -137,6 +174,9 @@ class Command(BaseCommand):
         en_only.save()
         en_only.sites.set([self.ap])
         en_only.authors.set([self.ap_author])
+        if en_only.category_id is None:
+            en_only.category = self.ap_categories["notes"]
+            en_only.save(update_fields=["category"])
 
         self.stdout.write("  posts ok")
 

@@ -4,12 +4,13 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from content.models import Page, Post
+from content.models import Category, Page, Post
 from people.models import Author
 
 from .serializers import (
     AuthorDetailSerializer,
     AuthorSerializer,
+    CategorySerializer,
     PageSerializer,
     PostDetailSerializer,
     PostListSerializer,
@@ -107,6 +108,34 @@ class PostDetailView(APIView):
                 post, context={"lang": lang, "site": request.site}
             ).data
         )
+
+
+class CategoryListView(ListAPIView):
+    """Read-only category list for the current site (architecture §4.2).
+
+    Not consumed in v1 — post payloads embed their own label — but it exists so
+    category tabs can be added later without an API change.
+    """
+
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        lang = resolve_lang(self.request)
+        # Language handling matches the post list: only categories that have a
+        # translation in the active language are listed, which also makes
+        # ordering by that translation's name deterministic.
+        return (
+            Category.objects.filter(
+                site=self.request.site,
+                translations__language_code=lang,
+            )
+            .prefetch_related("translations")
+            .distinct()
+            .order_by("translations__name")
+        )
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), "lang": resolve_lang(self.request)}
 
 
 class AuthorListView(ListAPIView):

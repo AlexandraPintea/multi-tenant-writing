@@ -46,6 +46,17 @@ class AuthorBriefSerializer(serializers.Serializer):
     slug = serializers.CharField()
 
 
+class CategorySerializer(_TranslatedMixin, serializers.Serializer):
+    slug = serializers.CharField()
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        # any_language: a label falling back to another language is better than
+        # a card rendering a blank chip. The list endpoint filters by language
+        # instead; embedded labels degrade rather than disappear.
+        return self._t(obj, "name", any_language=True)
+
+
 class PostListSerializer(_TranslatedMixin, serializers.Serializer):
     slug = serializers.CharField()
     title = serializers.SerializerMethodField()
@@ -53,6 +64,7 @@ class PostListSerializer(_TranslatedMixin, serializers.Serializer):
     published_at = serializers.DateTimeField()
     cover_image = serializers.SerializerMethodField()
     author = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
     available_languages = serializers.SerializerMethodField()
 
     def get_title(self, obj):
@@ -73,6 +85,16 @@ class PostListSerializer(_TranslatedMixin, serializers.Serializer):
         """
         author = obj.author_for_site(self.context["site"])
         return AuthorBriefSerializer(author).data if author else None
+
+    def get_category(self, obj):
+        """Embedded {slug, name}, or null.
+
+        Embedding the label rather than just the slug costs a few bytes per
+        card and saves the frontend a second request purely to resolve names.
+        """
+        if obj.category_id is None:
+            return None
+        return CategorySerializer(obj.category, context=self.context).data
 
     def get_available_languages(self, obj):
         return sorted(obj.get_available_languages())
