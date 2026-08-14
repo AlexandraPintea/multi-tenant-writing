@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from content.models import Post
+from content.models import Page, Post
 from people.models import Author
 from sites_core.models import Site
 
@@ -13,6 +13,7 @@ class Command(BaseCommand):
         self._seed_sites()
         self._seed_authors()
         self._seed_posts()
+        self._seed_pages()
         self.stdout.write(self.style.SUCCESS("Demo data seeded."))
 
     # ------------------------------------------------------------------ sites
@@ -136,3 +137,32 @@ class Command(BaseCommand):
         en_only.sites.set([self.ap])
 
         self.stdout.write("  posts ok")
+
+    # ------------------------------------------------------------------ pages
+
+    def _seed_pages(self):
+        ap_about, _ = Page.objects.get_or_create(site=self.ap, slug="about")
+        ap_about.set_current_language("en")
+        ap_about.title = "About"
+        ap_about.content = (
+            "Romanian writer based in Zalău. Essays and fiction, "
+            "in English and Romanian."
+        )
+        ap_about.save()
+        ap_about.set_current_language("ro")
+        ap_about.title = "Despre"
+        ap_about.content = (
+            "Scriitoare din Zalău. Eseuri și ficțiune, în engleză și română."
+        )
+        ap_about.save()
+
+        roam_about, _ = Page.objects.get_or_create(site=self.roam, slug="about")
+        roam_about.set_current_language("en")
+        roam_about.title = "About"
+        roam_about.content = (
+            "Roam Literary is a collective of writers in Budapest, Austin, "
+            "The Hague and Cluj."
+        )
+        roam_about.save()
+
+        self.stdout.write("  pages ok")
