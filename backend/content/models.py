@@ -3,6 +3,35 @@ from django.db import models
 from parler.models import TranslatableModel, TranslatedFields
 
 
+class Category(TranslatableModel):
+    """Admin-managed label on a Post, rendered as a small chip in v1.
+
+    A real table rather than a free-text field on Post: category tabs in the
+    writings list are deferred (requirements §3.4), and normalising the values
+    now means adding them later is a UI change with no data cleanup.
+    """
+
+    site = models.ForeignKey(
+        "sites_core.Site",
+        on_delete=models.CASCADE,
+        related_name="categories",
+    )
+    # Not translated: a slug is an admin-URL convenience and stays
+    # language-agnostic, while the label the reader sees does get translated.
+    slug = models.SlugField(max_length=200)
+
+    translations = TranslatedFields(
+        name=models.CharField(max_length=100),
+    )
+
+    class Meta:
+        unique_together = [("site", "slug")]
+        verbose_name_plural = "categories"
+
+    def __str__(self):
+        return self.safe_translation_getter("name", any_language=True) or self.slug
+
+
 class Post(TranslatableModel):
     # One Author per target site: the per-site profile the piece appears under
     # on that site. A single FK cannot express this, because Author is
@@ -14,6 +43,15 @@ class Post(TranslatableModel):
     )
     sites = models.ManyToManyField(
         "sites_core.Site",
+        related_name="posts",
+    )
+    # Nullable in v1: existing rows predate categories and must not block the
+    # migration. Tighten to required once the imported content is tidied.
+    category = models.ForeignKey(
+        "content.Category",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="posts",
     )
     slug = models.SlugField(max_length=200, unique=True)
@@ -46,6 +84,17 @@ class Post(TranslatableModel):
             return
 
         site_ids = set(self.sites.values_list("id", flat=True))
+
+        if self.category_id is not None and self.category.site_id not in site_ids:
+            raise ValidationError(
+                {
+                    "category": (
+                        f"{self.category} belongs to {self.category.site.domain}, "
+                        "which is not one of this post's target sites."
+                    )
+                }
+            )
+
         seen_sites = set()
         for author in self.authors.select_related("site"):
             if author.site_id not in site_ids:

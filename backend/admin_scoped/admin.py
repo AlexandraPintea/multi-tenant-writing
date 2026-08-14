@@ -23,7 +23,7 @@ class SiteScopedAdmin(admin.ModelAdmin):
     site_field = "site"
 
     # Relation fields whose choices must be narrowed to the user's Site.
-    site_scoped_relations = ("site", "sites", "author", "authors")
+    site_scoped_relations = ("site", "sites", "author", "authors", "category")
 
     def _user_site(self, request):
         profile = getattr(request.user, "profile", None)
