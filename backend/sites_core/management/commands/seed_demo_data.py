@@ -42,10 +42,18 @@ class Command(BaseCommand):
                 "theme_config": {
                     "--accent": "#8e44ad",
                     "--font-display": "'Merriweather', serif",
-                    "layout": "collective",
+                    "layout": "grid",
                 },
             },
         )
+        # get_or_create ignores defaults for a row that already exists, so an
+        # existing dev database keeps the old "collective" key and the frontend
+        # layout switch falls through. Correct that one value in place rather
+        # than overwriting theme_config, which may carry hand-edited colours.
+        if self.roam.theme_config.get("layout") == "collective":
+            self.roam.theme_config["layout"] = "grid"
+            self.roam.save(update_fields=["theme_config"])
+
         self.stdout.write("  sites ok")
 
     # ---------------------------------------------------------------- authors
