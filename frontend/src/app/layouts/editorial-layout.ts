@@ -1,9 +1,10 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { LoadPostList } from '../stores/content/content.actions';
 import { postListOf, selectContentSlice } from '../stores/content/content.selectors';
 import { LanguageStore } from '../stores/language.store';
 import { SiteConfigStore } from '../stores/site-config.store';
@@ -78,4 +79,11 @@ export class EditorialLayout {
   protected readonly recentPosts = computed(() =>
     postListOf(this.content(), this.language()).slice(0, 3),
   );
+
+  constructor() {
+    // Language switches must re-fetch; the resolver only ran on navigation.
+    effect(() => {
+      this.store.dispatch(new LoadPostList(this.language()));
+    });
+  }
 }

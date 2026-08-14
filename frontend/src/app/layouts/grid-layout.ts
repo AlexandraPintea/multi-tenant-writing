@@ -1,8 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { LoadAuthorList } from '../stores/content/content.actions';
 import { authorListOf, selectContentSlice } from '../stores/content/content.selectors';
 import { LanguageStore } from '../stores/language.store';
 import { SiteConfigStore } from '../stores/site-config.store';
@@ -72,4 +73,11 @@ export class GridLayout {
 
   protected readonly siteName = computed(() => this.siteConfig.config()?.name ?? '');
   protected readonly authors = computed(() => authorListOf(this.content(), this.language()));
+
+  constructor() {
+    // Language switches must re-fetch; the resolver only ran on navigation.
+    effect(() => {
+      this.store.dispatch(new LoadAuthorList(this.language()));
+    });
+  }
 }

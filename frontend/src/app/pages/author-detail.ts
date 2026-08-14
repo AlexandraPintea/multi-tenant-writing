@@ -4,6 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
 import { SeoService } from '../core/seo';
+import { LoadAuthorDetail } from '../stores/content/content.actions';
 import { authorOf, selectContentSlice } from '../stores/content/content.selectors';
 import { LanguageStore } from '../stores/language.store';
 
@@ -61,7 +62,8 @@ import { LanguageStore } from '../stores/language.store';
 export class AuthorDetail {
   readonly slug = input.required<string>();
 
-  private readonly content = inject(Store).selectSignal(selectContentSlice);
+  private readonly store = inject(Store);
+  private readonly content = this.store.selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
   private readonly seo = inject(SeoService);
 
@@ -70,6 +72,11 @@ export class AuthorDetail {
   );
 
   constructor() {
+    // Language switches must re-fetch; the resolver only ran on navigation.
+    effect(() => {
+      this.store.dispatch(new LoadAuthorDetail(this.slug(), this.language()));
+    });
+
     effect(() => {
       const author = this.author();
       if (!author) {
