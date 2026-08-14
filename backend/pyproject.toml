@@ -31,6 +31,26 @@ dev = [
     "black==26.5.1",
 ]
 
+# requirements.txt (runtime) and requirements-dev.txt (runtime + dev) are
+# compiled from the lists above, with hashes, and are what CI and the Phase 3
+# Docker image install from. Regenerate after any change here.
+#
+# Compile inside Linux, not on the Windows host. pip-compile resolves for the
+# platform it runs on and does not add environment markers, so a
+# Windows-generated lock pinned tzdata and colorama (Windows-only deps) while a
+# Linux-only dependency would have been missing entirely. CI and the VPS are
+# both Linux, so the lock is generated there:
+#
+#   docker run --rm -v "${PWD}:/app" -w /app python:3.12-slim sh -c \
+#     "pip install pip-tools==7.6.1 && \
+#      python -m piptools compile --generate-hashes --strip-extras \
+#        --output-file requirements.txt pyproject.toml && \
+#      python -m piptools compile --generate-hashes --strip-extras --extra dev \
+#        --output-file requirements-dev.txt pyproject.toml"
+#
+# pip-tools is deliberately not a dev dependency: it drags pip, setuptools and
+# build into the lock, which CI would then install on every run for nothing.
+
 [tool.setuptools]
 packages = []
 
