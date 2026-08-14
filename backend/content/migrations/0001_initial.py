@@ -11,76 +11,167 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('people', '0001_initial'),
-        ('sites_core', '0001_initial'),
+        ("people", "0001_initial"),
+        ("sites_core", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Page',
+            name="Page",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('slug', models.SlugField(max_length=200)),
-                ('site', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='pages', to='sites_core.site')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("slug", models.SlugField(max_length=200)),
+                (
+                    "site",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="pages",
+                        to="sites_core.site",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['slug'],
-                'unique_together': {('site', 'slug')},
+                "ordering": ["slug"],
+                "unique_together": {("site", "slug")},
             },
             bases=(parler.models.TranslatableModelMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='Post',
+            name="Post",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('slug', models.SlugField(max_length=200, unique=True)),
-                ('cover_image', models.ImageField(blank=True, upload_to='posts/covers/')),
-                ('published_at', models.DateTimeField(blank=True, null=True)),
-                ('is_published', models.BooleanField(db_index=True, default=False)),
-                ('author', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='posts', to='people.author')),
-                ('sites', models.ManyToManyField(related_name='posts', to='sites_core.site')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("slug", models.SlugField(max_length=200, unique=True)),
+                (
+                    "cover_image",
+                    models.ImageField(blank=True, upload_to="posts/covers/"),
+                ),
+                ("published_at", models.DateTimeField(blank=True, null=True)),
+                ("is_published", models.BooleanField(db_index=True, default=False)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="posts",
+                        to="people.author",
+                    ),
+                ),
+                (
+                    "sites",
+                    models.ManyToManyField(related_name="posts", to="sites_core.site"),
+                ),
             ],
             options={
-                'ordering': ['-published_at'],
+                "ordering": ["-published_at"],
             },
             bases=(parler.models.TranslatableModelMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='PageTranslation',
+            name="PageTranslation",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('language_code', models.CharField(db_index=True, max_length=15, verbose_name='Language')),
-                ('title', models.CharField(max_length=300)),
-                ('content', models.TextField(blank=True)),
-                ('master', parler.fields.TranslationsForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='translations', to='content.page')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "language_code",
+                    models.CharField(
+                        db_index=True, max_length=15, verbose_name="Language"
+                    ),
+                ),
+                ("title", models.CharField(max_length=300)),
+                ("content", models.TextField(blank=True)),
+                (
+                    "master",
+                    parler.fields.TranslationsForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="translations",
+                        to="content.page",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'page Translation',
-                'db_table': 'content_page_translation',
-                'db_tablespace': '',
-                'managed': True,
-                'default_permissions': (),
-                'constraints': [models.UniqueConstraint(fields=('language_code', 'master'), name='content_page_translation_uniq_lang')],
+                "verbose_name": "page Translation",
+                "db_table": "content_page_translation",
+                "db_tablespace": "",
+                "managed": True,
+                "default_permissions": (),
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("language_code", "master"),
+                        name="content_page_translation_uniq_lang",
+                    )
+                ],
             },
             bases=(parler.models.TranslatedFieldsModelMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='PostTranslation',
+            name="PostTranslation",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('language_code', models.CharField(db_index=True, max_length=15, verbose_name='Language')),
-                ('title', models.CharField(max_length=300)),
-                ('body', models.TextField()),
-                ('excerpt', models.TextField(blank=True)),
-                ('master', parler.fields.TranslationsForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='translations', to='content.post')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "language_code",
+                    models.CharField(
+                        db_index=True, max_length=15, verbose_name="Language"
+                    ),
+                ),
+                ("title", models.CharField(max_length=300)),
+                ("body", models.TextField()),
+                ("excerpt", models.TextField(blank=True)),
+                (
+                    "master",
+                    parler.fields.TranslationsForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="translations",
+                        to="content.post",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'post Translation',
-                'db_table': 'content_post_translation',
-                'db_tablespace': '',
-                'managed': True,
-                'default_permissions': (),
-                'constraints': [models.UniqueConstraint(fields=('language_code', 'master'), name='content_post_translation_uniq_lang')],
+                "verbose_name": "post Translation",
+                "db_table": "content_post_translation",
+                "db_tablespace": "",
+                "managed": True,
+                "default_permissions": (),
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("language_code", "master"),
+                        name="content_post_translation_uniq_lang",
+                    )
+                ],
             },
             bases=(parler.models.TranslatedFieldsModelMixin, models.Model),
         ),

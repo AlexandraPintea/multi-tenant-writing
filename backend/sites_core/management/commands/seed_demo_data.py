@@ -98,7 +98,9 @@ class Command(BaseCommand):
         bilingual.body = (
             "Words have the power to shape worlds, build bridges, and break walls."
         )
-        bilingual.excerpt = "An exploration of language and its quiet, relentless force."
+        bilingual.excerpt = (
+            "An exploration of language and its quiet, relentless force."
+        )
         bilingual.save()
         bilingual.set_current_language("ro")
         bilingual.title = "Puterea Cuvintelor"
@@ -124,7 +126,8 @@ class Command(BaseCommand):
         en_only.set_current_language("en")
         en_only.title = "Writing in the Margins"
         en_only.body = (
-            "There is something sacred about the notes we leave in the margins of books."
+            "There is something sacred about the notes "
+            "we leave in the margins of books."
         )
         en_only.excerpt = (
             "A meditation on annotation, marginalia, and the act of reading."
