@@ -1,8 +1,9 @@
-from admin_scoped.admin import SiteScopedAdmin
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from parler.admin import TranslatableAdmin
+
+from admin_scoped.admin import SiteScopedAdmin
 
 from .models import Author, UserProfile
 

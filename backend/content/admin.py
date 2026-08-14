@@ -1,6 +1,7 @@
-from admin_scoped.admin import SiteScopedAdmin
 from django.contrib import admin
 from parler.admin import TranslatableAdmin
+
+from admin_scoped.admin import SiteScopedAdmin
 
 from .models import Page, Post
 

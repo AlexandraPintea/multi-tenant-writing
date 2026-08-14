@@ -29,6 +29,12 @@ class SiteScopedAdmin(admin.ModelAdmin):
         profile = getattr(request.user, "profile", None)
         return getattr(profile, "site", None)
 
+    def _needs_scoping(self, request, db_field):
+        return (
+            not request.user.is_superuser
+            and db_field.name in self.site_scoped_relations
+        )
+
     def _scoped_relation_queryset(self, db_field, request):
         related = db_field.remote_field.model
         site = self._user_site(request)
@@ -48,7 +54,7 @@ class SiteScopedAdmin(admin.ModelAdmin):
         return qs.filter(**{self.site_field: site})
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if not request.user.is_superuser and db_field.name in self.site_scoped_relations:
+        if self._needs_scoping(request, db_field):
             kwargs["queryset"] = self._scoped_relation_queryset(db_field, request)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -56,7 +62,7 @@ class SiteScopedAdmin(admin.ModelAdmin):
         # Post.sites is M2M, so the ForeignKey hook never sees it. Without this
         # override a Roam editor gets an alexandrapintea.eu checkbox in the
         # publish-targets widget and can push a post onto the other tenant.
-        if not request.user.is_superuser and db_field.name in self.site_scoped_relations:
+        if self._needs_scoping(request, db_field):
             kwargs["queryset"] = self._scoped_relation_queryset(db_field, request)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 

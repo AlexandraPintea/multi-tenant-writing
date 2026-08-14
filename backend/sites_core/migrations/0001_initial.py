@@ -7,23 +7,30 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Site',
+            name="Site",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('domain', models.CharField(max_length=253, unique=True)),
-                ('name', models.CharField(max_length=100)),
-                ('default_language', models.CharField(default='en', max_length=10)),
-                ('enabled_languages', models.JSONField(default=list)),
-                ('theme_config', models.JSONField(default=dict)),
-                ('is_active', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("domain", models.CharField(max_length=253, unique=True)),
+                ("name", models.CharField(max_length=100)),
+                ("default_language", models.CharField(default="en", max_length=10)),
+                ("enabled_languages", models.JSONField(default=list)),
+                ("theme_config", models.JSONField(default=dict)),
+                ("is_active", models.BooleanField(default=True)),
             ],
             options={
-                'ordering': ['domain'],
+                "ordering": ["domain"],
             },
         ),
     ]

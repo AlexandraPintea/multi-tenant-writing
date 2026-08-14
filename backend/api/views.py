@@ -97,9 +97,7 @@ class PostDetailView(APIView):
         if lang not in available:
             raise PostNotAvailableInLanguage(available_languages=available)
 
-        return Response(
-            PostDetailSerializer(post, context={"lang": lang}).data
-        )
+        return Response(PostDetailSerializer(post, context={"lang": lang}).data)
 
 
 class AuthorListView(ListAPIView):
