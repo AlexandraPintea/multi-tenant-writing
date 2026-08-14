@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
 import {
@@ -44,7 +44,7 @@ import { LanguageStore } from '../stores/language.store';
     } @else if (notInLanguage()) {
       <section class="unavailable">
         <p>
-          {{ 'post.notInLanguage' | translate: { languages: availableLanguages().join(', ') } }}
+          {{ 'post.notInLanguage' | translate: { languages: availableLanguageNames() } }}
         </p>
         <a [routerLink]="['/writings']">{{ 'writings.title' | translate }} →</a>
       </section>
@@ -77,6 +77,7 @@ export class PostDetail {
 
   private readonly content = inject(Store).selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
+  private readonly translate = inject(TranslateService);
 
   protected readonly post = computed(() => postOf(this.content(), this.slug(), this.language()));
   protected readonly notInLanguage = computed(() =>
@@ -85,4 +86,17 @@ export class PostDetail {
   protected readonly availableLanguages = computed(() =>
     availableLanguagesOf(this.content(), this.slug()),
   );
+  /**
+   * "engleză" reads better than "en" in the fallback sentence.
+   *
+   * The read of language() is load-bearing, not decoration: translate.instant()
+   * is a plain call, so nothing here would re-run when the language changes and
+   * a Romanian page rendered "disponibil doar în English".
+   */
+  protected readonly availableLanguageNames = computed(() => {
+    this.language();
+    return this.availableLanguages()
+      .map((code) => this.translate.instant(`language.${code}`))
+      .join(', ');
+  });
 }

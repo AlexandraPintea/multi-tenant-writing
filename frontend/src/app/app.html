@@ -11,13 +11,9 @@
     <a routerLink="/about" routerLinkActive="is-active">{{ 'nav.about' | translate }}</a>
     <a routerLink="/contact" routerLinkActive="is-active">{{ 'nav.contact' | translate }}</a>
 
-    <!-- Placeholder toggle from 2.3. Replaced in 2.6 by LanguageToggleComponent,
-         which adds the dimming and aria rules for monolingual posts. -->
-    @if (otherLanguage(); as next) {
-      <button type="button" class="site-header__language" (click)="toggleLanguage()">
-        {{ activeLanguage() }} → {{ next }}
-      </button>
-    }
+    <!-- Renders nothing on a single-language site, and decides for itself when
+         a language is unavailable for what is on screen. -->
+    <app-language-toggle />
   </nav>
 </header>
 

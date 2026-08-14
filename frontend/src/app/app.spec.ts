@@ -3,8 +3,10 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
+import { provideStore } from '@ngxs/store';
 
 import { App } from './app';
+import { ContentState } from './stores/content/content.state';
 import { LanguageStore } from './stores/language.store';
 import { SiteConfigStore } from './stores/site-config.store';
 
@@ -21,6 +23,8 @@ describe('App', () => {
         // even though these tests never navigate.
         provideRouter([]),
         provideTranslateService({ fallbackLang: 'en', lang: 'en' }),
+        // The header embeds LanguageToggle, which reads the content slice.
+        provideStore([ContentState]),
         SiteConfigStore,
         LanguageStore,
       ],
