@@ -52,7 +52,7 @@ class PostListSerializer(_TranslatedMixin, serializers.Serializer):
     excerpt = serializers.SerializerMethodField()
     published_at = serializers.DateTimeField()
     cover_image = serializers.SerializerMethodField()
-    author = AuthorBriefSerializer()
+    author = serializers.SerializerMethodField()
     available_languages = serializers.SerializerMethodField()
 
     def get_title(self, obj):
@@ -63,6 +63,16 @@ class PostListSerializer(_TranslatedMixin, serializers.Serializer):
 
     def get_cover_image(self, obj):
         return obj.cover_image.url if obj.cover_image else None
+
+    def get_author(self, obj):
+        """The Author profile this post appears under on the requesting site.
+
+        A cross-posted piece carries one Author per site, so which one is
+        correct depends on who is asking. Null when the writer has no profile
+        on this site — that is a legitimate state, not an error.
+        """
+        author = obj.author_for_site(self.context["site"])
+        return AuthorBriefSerializer(author).data if author else None
 
     def get_available_languages(self, obj):
         return sorted(obj.get_available_languages())

@@ -89,7 +89,6 @@ class Command(BaseCommand):
         bilingual, _ = Post.objects.get_or_create(
             slug="the-power-of-words",
             defaults={
-                "author": self.ap_author,
                 "published_at": timezone.now(),
                 "is_published": True,
             },
@@ -114,12 +113,14 @@ class Command(BaseCommand):
         )
         bilingual.save()
         bilingual.sites.set([self.ap, self.roam])
+        # One Author per target site — this is the cross-posting case the M2M
+        # exists for: the piece appears under a different profile on each site.
+        bilingual.authors.set([self.ap_author, self.roam_author])
 
         # English-only post published only on alexandrapintea.eu
         en_only, _ = Post.objects.get_or_create(
             slug="writing-in-the-margins",
             defaults={
-                "author": self.ap_author,
                 "published_at": timezone.now(),
                 "is_published": True,
             },
@@ -135,6 +136,7 @@ class Command(BaseCommand):
         )
         en_only.save()
         en_only.sites.set([self.ap])
+        en_only.authors.set([self.ap_author])
 
         self.stdout.write("  posts ok")
 
