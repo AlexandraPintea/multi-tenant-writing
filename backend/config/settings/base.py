@@ -110,6 +110,13 @@ PARLER_LANGUAGES = {
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Without these, ImageField.url returned "/posts/covers/x.jpg" — no prefix at
+# all — so og:image pointed at a path nginx would never resolve and the unfurl
+# came back with a broken picture. MEDIA_ROOT is the volume architecture §6.4
+# mounts at /app/media in the container.
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Site resolved by sites_core.middleware.SiteMiddleware for unknown hosts

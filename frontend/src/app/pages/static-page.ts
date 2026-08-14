@@ -1,7 +1,8 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { SeoService } from '../core/seo';
 import { pageOf, selectContentSlice } from '../stores/content/content.selectors';
 import { LanguageStore } from '../stores/language.store';
 
@@ -39,8 +40,24 @@ export class StaticPage {
 
   private readonly content = inject(Store).selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
+  private readonly seo = inject(SeoService);
 
   protected readonly page = computed(() =>
     pageOf(this.content(), this.pageSlug(), this.language()),
   );
+
+  constructor() {
+    effect(() => {
+      const page = this.page();
+      if (!page) {
+        return;
+      }
+      this.seo.apply({
+        title: page.title,
+        // First couple of lines of the body: these pages have no excerpt field.
+        description: page.content.slice(0, 200),
+        path: `/${page.slug}`,
+      });
+    });
+  }
 }

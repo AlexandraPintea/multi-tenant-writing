@@ -11,7 +11,8 @@
     "collective": "The collective"
   },
   "writings": {
-    "title": "Writings"
+    "title": "Writings",
+    "description": "Essays, fiction and notes."
   },
   "authors": {
     "title": "Authors"

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
@@ -10,6 +10,7 @@ import {
   postOf,
   selectContentSlice,
 } from '../stores/content/content.selectors';
+import { SeoService } from '../core/seo';
 import { LanguageStore } from '../stores/language.store';
 
 /**
@@ -78,6 +79,25 @@ export class PostDetail {
   private readonly content = inject(Store).selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
   private readonly translate = inject(TranslateService);
+  private readonly seo = inject(SeoService);
+
+  constructor() {
+    // The highest-stakes unfurl in the project: a post URL pasted into Slack or
+    // WhatsApp has to come back with the title, excerpt and cover image.
+    effect(() => {
+      const post = this.post();
+      if (!post) {
+        return;
+      }
+      this.seo.apply({
+        title: post.title,
+        description: post.excerpt,
+        image: post.cover_image,
+        type: 'article',
+        path: `/writings/${post.slug}`,
+      });
+    });
+  }
 
   protected readonly post = computed(() => postOf(this.content(), this.slug(), this.language()));
   protected readonly notInLanguage = computed(() =>

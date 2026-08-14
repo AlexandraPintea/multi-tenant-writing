@@ -1,8 +1,9 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { SeoService } from '../core/seo';
 import { authorOf, selectContentSlice } from '../stores/content/content.selectors';
 import { LanguageStore } from '../stores/language.store';
 
@@ -62,8 +63,27 @@ export class AuthorDetail {
 
   private readonly content = inject(Store).selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
+  private readonly seo = inject(SeoService);
 
   protected readonly author = computed(() =>
     authorOf(this.content(), this.slug(), this.language()),
   );
+
+  constructor() {
+    effect(() => {
+      const author = this.author();
+      if (!author) {
+        return;
+      }
+      this.seo.apply({
+        title: author.name,
+        description: author.bio,
+        image: author.portrait,
+        // "profile" would be more precise, but article vs website is the
+        // distinction the unfurlers actually act on.
+        type: 'website',
+        path: `/authors/${author.slug}`,
+      });
+    });
+  }
 }

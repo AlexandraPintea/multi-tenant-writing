@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 
+import { SeoService } from '../core/seo';
 import { SiteConfigStore } from '../stores/site-config.store';
 import { EditorialLayout } from './editorial-layout';
 import { GridLayout } from './grid-layout';
@@ -30,5 +31,20 @@ import { GridLayout } from './grid-layout';
   `,
 })
 export class SiteHome {
-  protected readonly layout = inject(SiteConfigStore).layout;
+  private readonly siteConfig = inject(SiteConfigStore);
+  private readonly seo = inject(SeoService);
+
+  protected readonly layout = this.siteConfig.layout;
+
+  constructor() {
+    effect(() => {
+      const config = this.siteConfig.config();
+      if (!config) {
+        return;
+      }
+      // The home title is the site name alone — "Alexandra Pintea · Alexandra
+      // Pintea" is what appending the site name everywhere would produce.
+      this.seo.apply({ title: '', description: config.name, path: '/' });
+    });
+  }
 }
