@@ -362,25 +362,28 @@ A few ground rules to get learning value out of working with Claude Code:
 
 ### 2.8 Jest unit-test setup
 
-**Scope.** Replace the default Karma + Jasmine with Jest. Add unit tests for both stores and a couple of components.
+> **What the scaffold actually produced.** Angular 21 scaffolds **Vitest**, not Karma + Jasmine, so there were no karma packages to uninstall — the swap is Vitest → Jest. And `ng test` **cannot** run Jest: Angular 21's `@angular/build:unit-test` builder accepts only `karma` or `vitest` as its `runner`. The angular.json test target was removed and `npm test` is the single entry point. That is the standing cost of choosing Jest here; the specs themselves needed no changes, since none used Vitest-specific APIs.
 
-**Learning goal.** jest-preset-angular, testing standalone components, testing SignalStore and classic NgRx, mocking HttpClient.
+**Scope.** Replace the scaffolded Vitest setup with Jest. Add unit tests for both stores and a couple of components.
+
+**Learning goal.** jest-preset-angular, testing standalone components, testing SignalStore and NGXS, mocking HttpClient — and what a test runner has to do for a zoneless Angular app.
 
 **Prompt.**
-> Replace Karma + Jasmine with Jest in the /frontend project. Use jest-preset-angular. Steps:
-> 1. Uninstall karma packages. Install jest, jest-preset-angular, @types/jest.
-> 2. Add jest.config.ts with the preset; configure setupFiles for zone.js/testing.
-> 3. Update angular.json so `ng test` runs Jest (or add an npm script `test`).
-> 4. Write tests:
->    - site-config.store.spec.ts: assert that loadSiteConfig() dispatches the HTTP call with the X-Site-Domain header, and that the theme signal updates after a successful response.
->    - language.store.spec.ts: assert that setLanguage rejects unsupported codes and persists to localStorage.
->    - content.reducer.spec.ts: assert that loadPostListSuccess populates the entity adapter; loadPostDetailNotInLanguage stores the available_languages hint.
->    - content.effects.spec.ts: use marble testing (or jest-mock-axios) to assert that the 404-with-hint case dispatches loadPostDetailNotInLanguage, not loadPostDetailFailure.
->    - language-toggle.component.spec.ts: assert aria attributes across the four states from 2.6.
+> Replace Vitest with Jest in the /frontend project. Use jest-preset-angular. Steps:
+> 1. Uninstall vitest. Install jest, jest-preset-angular, @types/jest and jest-environment-jsdom (Jest 28+ no longer ships the jsdom environment).
+> 2. Add a jest config with the preset. Use `.mjs` with a JSDoc `@type` annotation rather than `.ts`, which would drag in ts-node purely to parse the config. In the setup file call `setupZonelessTestEnv()` from `jest-preset-angular/setup-env/zoneless` — the app has no `provideZoneChangeDetection`, so the zone.js environment would test a change-detection model production never runs.
+> 3. Set `transformIgnorePatterns` to transform `@angular`, `@ngrx`, `@ngxs`, `@ngx-translate` and `rxjs`: they ship ESM and Jest runs CommonJS, so leaving them ignored fails on `export` inside node_modules.
+> 4. Remove the angular.json `test` target and point the `test` npm script at jest, so there is exactly one way to run the suite.
+> 5. Write tests:
+>    - site-config.store.spec.ts: the request carries X-Site-Domain, the theme/layout/language signals update after a response, the fallbacks are safe before it arrives, and repeat calls do not refetch.
+>    - language.store.spec.ts: setLanguage rejects codes the site does not enable, persists an explicit choice, and does *not* persist the initial resolution.
+>    - content.state.spec.ts: the list populates in API order and caches per language; a 404 carrying available_languages dispatches LoadPostDetailNotInLanguage, a 404 without it dispatches the failure action. (NGXS folds the reducer and the effect into one handler, so this is a single spec rather than the reducer/effects pair NgRx would need.)
+>    - language-toggle.spec.ts: aria attributes across the four states from 2.6.
+>    - post-detail.spec.ts: the three states — rendered, not-in-this-language, and genuinely absent.
 >
-> Explain Jest vs Karma for Angular — what changes in practice and what stays the same.
+> Explain what changes in practice moving between runners, and what stays the same.
 
-**Verify.** `npm run test` runs and all tests pass. Coverage is reported at the end of the run.
+**Verify.** `npm test` runs and all tests pass; `npm run test:coverage` prints a table. Note that `ng test` no longer works by design — see the note above.
 
 ### 2.9 Playwright e2e setup
 

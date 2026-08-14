@@ -114,9 +114,13 @@ Still to build: 2.5 routes/layouts, 2.6 EN/RO toggle, 2.7 Open Graph meta, 2.9 P
 
 In NGXS the HTTP lives in the `@Action` handler, so `content.state.ts` is what NgRx would split into a reducer plus an effect. The 404-with-`available_languages` contract survives the switch: it dispatches `LoadPostDetailNotInLanguage`, never the failure action, and once the store knows a post lacks a language it does not ask again. Don't add Angular files outside `frontend/`, and don't introduce NgModules — the project is standalone-only by design.
 
-Two open frontend decisions, both worth settling before 2.5 and 2.8:
-- **Layout key mismatch.** `seed_demo_data` writes `"layout": "collective"` for roamliterary.com, but playbook 2.5 switches on `layout === 'grid'`. Pick one before writing the layout switch.
-- **Jest vs Vitest.** Angular 21 scaffolded **Vitest** (`vitest` + `jsdom` in devDependencies), while requirements §4.2 and architecture §5.6 name Jest. Recommendation is to keep Vitest and amend the docs rather than fight the builder.
+### Frontend tests
+
+**Jest, run with `npm test` — not `ng test`.** Angular 21's `@angular/build:unit-test` builder accepts only `karma` or `vitest` as its runner, so there is no way to drive Jest through the CLI; the angular.json `test` target was removed so there is exactly one entry point. `npm run test:coverage` prints the table.
+
+Config lives in `jest.config.mjs` (`.mjs`, not `.ts`, so that reading the config does not require ts-node) and `setup-jest.ts`, which calls `setupZonelessTestEnv()` — the app has no `provideZoneChangeDetection`, so the zone.js environment would exercise a change-detection model production never runs. `transformIgnorePatterns` must keep transforming `@angular`, `@ngrx`, `@ngxs`, `@ngx-translate` and `rxjs`: they ship ESM, Jest runs CommonJS, and a new ESM dependency will fail with a bare `export` error in node_modules until it is added there.
+
+Both earlier open decisions are now settled: the Roam layout key is `grid` (the seeder migrates an existing `collective` value in place), and the runner is Jest, which is what requirements §4.2 and architecture §5.6 always specified.
 
 ## Code style
 
