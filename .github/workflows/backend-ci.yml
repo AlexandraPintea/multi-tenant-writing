@@ -1,0 +1,85 @@
+name: backend-ci
+
+# Runs on every PR, and on pushes to main so the default branch never sits in a
+# broken state after a merge. Path-filtered: frontend-only work should not wait
+# on a Postgres container it does not use.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      # A real Postgres 16, not in-memory SQLite. The suite leans on behaviour
+      # that is not identical across backends — JSONField lookups on
+      # Site.enabled_languages, distinct() over the parler translations join,
+      # NULL ordering on published_at — so a SQLite run could pass here and
+      # still break in production. Matching the prod engine is the whole point
+      # of a service container; the ~10s it costs to start is cheap next to a
+      # green CI badge that means nothing.
+      postgres:
+        image: postgres:16
+        env:
+          # Must match what config/settings/base.py expects via DATABASE_URL,
+          # and mirrors .env.example so local and CI behave the same.
+          POSTGRES_DB: writing_local
+          POSTGRES_USER: writing
+          POSTGRES_PASSWORD: writing
+        ports:
+          - 5432:5432
+        # Without this the job can start before Postgres accepts connections
+        # and the first test fails on a refused socket.
+        options: >-
+          --health-cmd "pg_isready -U writing -d writing_local"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Dev-only value. Production reads SECRET_KEY from the VPS .env file and
+      # must never reuse this one.
+      SECRET_KEY: ci-secret-key-not-used-anywhere-else
+      DATABASE_URL: postgres://writing:writing@localhost:5432/writing_local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          # Relative to the repo root: `defaults.working-directory` applies to
+          # `run` steps, not to action inputs.
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install dependencies
+        # There is no requirements.txt — dependencies live in pyproject.toml,
+        # and [dev] brings pytest, ruff and black.
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (black)
+        run: black --check .
+
+      - name: Tests (pytest)
+        # pytest-django creates and drops test_writing_local against the
+        # service container; DJANGO_SETTINGS_MODULE comes from pytest.ini.
+        run: pytest
