@@ -2,25 +2,54 @@
 name = "writing-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
+# Pinned with ~= (compatible release): security and bug-fix patches still come
+# through, but a minor bump cannot arrive silently. Open lower bounds meant a
+# fresh CI install resolved Django 6.1, DRF 3.18 and ruff 0.16 while this venv
+# ran 6.0.5, 3.17.1 and 0.15 — so CI was testing a stack nobody develops
+# against, and a routine upstream release could break it with no code change.
 dependencies = [
-    "django>=5.1",
-    "psycopg2-binary>=2.9",
-    "python-decouple>=3.8",
-    "dj-database-url>=2.1",
-    "django-parler>=2.3",
-    "djangorestframework>=3.15",
-    "django-cors-headers>=4.4",
-    "Pillow>=10.0",
+    "django~=6.0.5",
+    "psycopg2-binary~=2.9.12",
+    "python-decouple~=3.8",
+    "dj-database-url~=3.1.2",
+    "django-parler~=2.4.0",
+    "djangorestframework~=3.17.1",
+    "django-cors-headers~=4.9.0",
+    "Pillow~=12.2.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
-    "pytest-django>=4.8",
-    "model-bakery>=1.17",
-    "ruff>=0.4",
-    "black>=24.0",
+    "pytest~=9.0.3",
+    "pytest-django~=4.12.0",
+    "model-bakery~=1.24.0",
+    # Exact, not ~=: ruff and black decide what "correct" looks like. A new
+    # ruff minor adds lint rules and a new black changes formatting output,
+    # either of which fails CI on code nobody touched. Upgrading these is a
+    # deliberate commit that reformats the tree, never a surprise.
+    "ruff==0.15.14",
+    "black==26.5.1",
 ]
+
+# requirements.txt (runtime) and requirements-dev.txt (runtime + dev) are
+# compiled from the lists above, with hashes, and are what CI and the Phase 3
+# Docker image install from. Regenerate after any change here.
+#
+# Compile inside Linux, not on the Windows host. pip-compile resolves for the
+# platform it runs on and does not add environment markers, so a
+# Windows-generated lock pinned tzdata and colorama (Windows-only deps) while a
+# Linux-only dependency would have been missing entirely. CI and the VPS are
+# both Linux, so the lock is generated there:
+#
+#   docker run --rm -v "${PWD}:/app" -w /app python:3.12-slim sh -c \
+#     "pip install pip-tools==7.6.1 && \
+#      python -m piptools compile --generate-hashes --strip-extras \
+#        --output-file requirements.txt pyproject.toml && \
+#      python -m piptools compile --generate-hashes --strip-extras --extra dev \
+#        --output-file requirements-dev.txt pyproject.toml"
+#
+# pip-tools is deliberately not a dev dependency: it drags pip, setuptools and
+# build into the lock, which CI would then install on every run for nothing.
 
 [tool.setuptools]
 packages = []
