@@ -6,11 +6,13 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
 import { routes } from './app.routes';
+import { SiteConfigStore } from './stores/site-config.store';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
+    SiteConfigStore,
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch()),
     provideTranslateService({
