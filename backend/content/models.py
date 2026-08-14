@@ -85,6 +85,32 @@ class Post(TranslatableModel):
 
         site_ids = set(self.sites.values_list("id", flat=True))
 
+        if self.is_published:
+            # §4.3: publishable as soon as ONE of the target sites' enabled
+            # languages has a complete translation. Not all of them — that is
+            # what lets an English-only piece live on a bilingual site.
+            enabled = {
+                language
+                for site in self.sites.all()
+                for language in site.enabled_languages
+            }
+            complete = any(
+                translation.language_code in enabled
+                and translation.title.strip()
+                and translation.body.strip()
+                for translation in self.translations.all()
+            )
+            if not complete:
+                raise ValidationError(
+                    {
+                        "is_published": (
+                            "Cannot publish without a title and body in at "
+                            "least one language this post's sites enable "
+                            f"({sorted(enabled) or 'no sites selected'})."
+                        )
+                    }
+                )
+
         if self.category_id is not None and self.category.site_id not in site_ids:
             raise ValidationError(
                 {
