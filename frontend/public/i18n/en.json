@@ -20,6 +20,14 @@
     "notInLanguage": "This piece is only available in {{languages}}.",
     "readIn": "Read it in {{language}}"
   },
+  "toggle": {
+    "label": "Language",
+    "unavailable": "This piece is only available in {{language}}."
+  },
+  "language": {
+    "en": "English",
+    "ro": "Romanian"
+  },
   "common": {
     "nothingYet": "Nothing here yet.",
     "notFound": "Not found."

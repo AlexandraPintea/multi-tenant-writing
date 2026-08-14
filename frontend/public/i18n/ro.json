@@ -20,6 +20,14 @@
     "notInLanguage": "Acest text este disponibil doar în {{languages}}.",
     "readIn": "Citește în {{language}}"
   },
+  "toggle": {
+    "label": "Limbă",
+    "unavailable": "Acest text este disponibil doar în {{language}}."
+  },
+  "language": {
+    "en": "engleză",
+    "ro": "română"
+  },
   "common": {
     "nothingYet": "Încă nimic aici.",
     "notFound": "Nu a fost găsit."
