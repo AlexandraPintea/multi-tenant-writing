@@ -10,10 +10,17 @@ class SiteConfigSerializer(serializers.Serializer):
 
     domain = serializers.CharField()
     name = serializers.CharField()
+    logo = serializers.SerializerMethodField()
     theme = serializers.SerializerMethodField()
     layout = serializers.SerializerMethodField()
     enabled_languages = serializers.ListField(child=serializers.CharField())
     default_language = serializers.CharField()
+
+    def get_logo(self, obj):
+        # Root-relative, like every other upload this API serves: nginx puts
+        # /media on the same origin in production, and the frontend's mediaUrl
+        # re-bases it when the API is elsewhere.
+        return obj.logo.url if obj.logo else None
 
     def get_theme(self, obj):
         return {k: v for k, v in obj.theme_config.items() if k != "layout"}

@@ -28,6 +28,21 @@ def test_site_config_reflects_the_requesting_tenant(client, alex_site, roam_site
 
 
 @pytest.mark.django_db
+def test_site_config_carries_the_logo_when_one_is_uploaded(client, alex_site):
+    # No logo is the normal state, and the header falls back to the site name,
+    # so null has to survive the serializer rather than becoming "".
+    assert client.get("/api/site-config/", headers=ALEX).json()["logo"] is None
+
+    alex_site.logo = "sites/logos/wordmark.png"
+    alex_site.save(update_fields=["logo"])
+
+    logo = client.get("/api/site-config/", headers=ALEX).json()["logo"]
+    # Root-relative like every other upload: the frontend re-bases it when the
+    # API is on another origin, and nginx serves it same-origin in production.
+    assert logo == "/media/sites/logos/wordmark.png"
+
+
+@pytest.mark.django_db
 def test_post_list_is_scoped_to_the_site(client, bilingual_post, english_only_post):
     assert set(slugs(client.get("/api/posts/", headers=ALEX))) == {
         "the-power-of-words",

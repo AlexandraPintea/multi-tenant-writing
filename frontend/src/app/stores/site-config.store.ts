@@ -16,6 +16,8 @@ import { environment } from '../../environments/environment';
 export interface SiteConfig {
   domain: string;
   name: string;
+  /** Root-relative upload path, or null when the site has no logo. */
+  logo: string | null;
   /** CSS custom properties to apply to :root (theme_config minus the `layout` key). */
   theme: Record<string, string>;
   layout: string | null;
@@ -38,6 +40,7 @@ const initialState: SiteConfigState = {
 export const SiteConfigStore = signalStore(
   withState(initialState),
   withComputed(({ config }) => ({
+    logo: computed(() => config()?.logo ?? null),
     theme: computed(() => config()?.theme ?? {}),
     layout: computed(() => config()?.layout ?? null),
     enabledLanguages: computed(() => config()?.enabled_languages ?? []),

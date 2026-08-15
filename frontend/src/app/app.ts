@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { LanguageToggleComponent } from './components/language-toggle/language-toggle.component';
+import { MediaUrlPipe } from './core/media-url.pipe';
 import { SiteConfigStore } from './stores/site-config.store';
 
 /**
@@ -13,7 +14,14 @@ import { SiteConfigStore } from './stores/site-config.store';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, LanguageToggleComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    TranslatePipe,
+    LanguageToggleComponent,
+    MediaUrlPipe,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -21,6 +29,7 @@ export class App implements OnInit {
   private readonly siteConfig = inject(SiteConfigStore);
 
   protected readonly siteName = computed(() => this.siteConfig.config()?.name ?? '');
+  protected readonly logo = this.siteConfig.logo;
   protected readonly showAuthors = computed(() => this.siteConfig.layout() === 'grid');
 
   ngOnInit(): void {
