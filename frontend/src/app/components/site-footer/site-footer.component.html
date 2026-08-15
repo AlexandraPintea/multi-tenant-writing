@@ -1,0 +1,28 @@
+@if (links().length || copyright()) {
+  <div
+    class="site-footer__inner d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
+  >
+    @if (copyright()) {
+      <p class="site-footer__copyright m-0">{{ copyright() }}</p>
+    }
+
+    @if (links().length) {
+      <ul class="site-footer__links nav gap-4 m-0 p-0">
+        @for (link of links(); track link.key) {
+          <li class="nav-item">
+            <!-- rel on every one: these all leave the site, and target=_blank
+                 without noopener hands the opener to the destination. -->
+            <a
+              class="nav-link p-0 link-dark"
+              [href]="link.href"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ link.label }}
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}

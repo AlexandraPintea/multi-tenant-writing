@@ -23,7 +23,9 @@
 }
 
 @for (post of visiblePosts(); track post.slug) {
-  <article class="preview row g-0 row-gap-4 justify-content-between align-items-center mb-6 mb-md-7">
+  <article
+    class="preview row g-0 row-gap-4 justify-content-between align-items-center mb-6 mb-md-7"
+  >
     @if (post.cover_image) {
       <div class="preview__media col-12">
         <!-- d-block on the anchor: .ratio sizes itself with width:100%, which an

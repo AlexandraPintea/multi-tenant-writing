@@ -43,6 +43,28 @@ def test_site_config_carries_the_logo_when_one_is_uploaded(client, alex_site):
 
 
 @pytest.mark.django_db
+def test_site_config_carries_the_footer_fields(client, alex_site):
+    empty = client.get("/api/site-config/", headers=ALEX).json()
+    # Both are optional; the footer falls back to "© <year> <name>" and renders
+    # no link row, so the empty shapes have to survive rather than go missing.
+    assert empty["social_links"] == {}
+    assert empty["copyright_text"] == ""
+
+    alex_site.social_links = {"email": "hello@example.com", "instagram": "https://ig/x"}
+    alex_site.copyright_text = "© Alexandra Pintea"
+    alex_site.save(update_fields=["social_links", "copyright_text"])
+
+    config = client.get("/api/site-config/", headers=ALEX).json()
+    assert config["copyright_text"] == "© Alexandra Pintea"
+    # Free-form keys, passed through untouched: the frontend decides how to
+    # label and link each one, so adding a network needs no backend change.
+    assert config["social_links"] == {
+        "email": "hello@example.com",
+        "instagram": "https://ig/x",
+    }
+
+
+@pytest.mark.django_db
 def test_post_list_is_scoped_to_the_site(client, bilingual_post, english_only_post):
     assert set(slugs(client.get("/api/posts/", headers=ALEX))) == {
         "the-power-of-words",

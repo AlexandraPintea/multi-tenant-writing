@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { LanguageToggleComponent } from './components/language-toggle/language-toggle.component';
+import { SiteFooterComponent } from './components/site-footer/site-footer.component';
 import { MediaUrlPipe } from './core/media-url.pipe';
 import { SiteConfigStore } from './stores/site-config.store';
 
@@ -20,6 +21,7 @@ import { SiteConfigStore } from './stores/site-config.store';
     RouterLinkActive,
     TranslatePipe,
     LanguageToggleComponent,
+    SiteFooterComponent,
     MediaUrlPipe,
   ],
   templateUrl: './app.html',

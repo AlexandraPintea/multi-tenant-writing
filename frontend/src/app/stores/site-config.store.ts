@@ -18,6 +18,10 @@ export interface SiteConfig {
   name: string;
   /** Root-relative upload path, or null when the site has no logo. */
   logo: string | null;
+  /** Free-form network -> address/URL, e.g. {"instagram": "https://..."}. */
+  social_links: Record<string, string>;
+  /** Empty means the footer composes "© <year> <name>" itself. */
+  copyright_text: string;
   /** CSS custom properties to apply to :root (theme_config minus the `layout` key). */
   theme: Record<string, string>;
   layout: string | null;
@@ -41,6 +45,8 @@ export const SiteConfigStore = signalStore(
   withState(initialState),
   withComputed(({ config }) => ({
     logo: computed(() => config()?.logo ?? null),
+    socialLinks: computed(() => config()?.social_links ?? {}),
+    copyrightText: computed(() => config()?.copyright_text ?? ''),
     theme: computed(() => config()?.theme ?? {}),
     layout: computed(() => config()?.layout ?? null),
     enabledLanguages: computed(() => config()?.enabled_languages ?? []),
