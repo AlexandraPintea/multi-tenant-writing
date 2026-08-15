@@ -3,9 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
-import { environment } from '../../environments/environment';
 import { LanguageStore } from '../stores/language.store';
 import { SiteConfigStore } from '../stores/site-config.store';
+import { mediaUrl } from './media';
 import { resolveSiteOrigin } from './site-domain';
 
 export interface PageSeo {
@@ -80,13 +80,13 @@ export class SeoService {
     if (/^https?:\/\//.test(value)) {
       return value;
     }
-    // Media paths come back from Django root-relative ("/media/..."). In
-    // production nginx serves them from the same origin; in development the API
-    // lives elsewhere, so fall back to the API host.
+    // Media paths come back from Django root-relative. mediaUrl() decides where
+    // /media actually lives — the same decision the <img> bindings make — and
+    // returns the path untouched when it is same-origin, which an unfurler
+    // cannot use, so absolutise whatever comes back.
     if (value.startsWith('/media/')) {
-      const apiOrigin = environment.API_BASE_URL.replace(/\/api\/?$/, '');
-      const base = /^https?:\/\//.test(apiOrigin) ? apiOrigin : this.origin;
-      return `${base}${value}`;
+      const resolved = mediaUrl(value);
+      return /^https?:\/\//.test(resolved) ? resolved : `${this.origin}${resolved}`;
     }
     return `${this.origin}${value.startsWith('/') ? value : `/${value}`}`;
   }

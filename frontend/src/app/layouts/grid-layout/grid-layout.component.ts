@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { MediaUrlPipe } from '../../core/media-url.pipe';
 import { LoadAuthorList } from '../../stores/content/content.actions';
 import { authorListOf, selectContentSlice } from '../../stores/content/content.selectors';
 import { LanguageStore } from '../../stores/language.store';
@@ -16,7 +17,7 @@ import { SiteConfigStore } from '../../stores/site-config.store';
  */
 @Component({
   selector: 'app-grid-layout',
-  imports: [RouterLink, TranslatePipe],
+  imports: [RouterLink, TranslatePipe, MediaUrlPipe],
   templateUrl: './grid-layout.component.html',
   styleUrl: './grid-layout.component.scss',
 })

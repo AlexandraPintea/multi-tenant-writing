@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { MediaUrlPipe } from '../../core/media-url.pipe';
 import { SeoService } from '../../core/seo';
 import { LoadAuthorDetail } from '../../stores/content/content.actions';
 import { authorOf, selectContentSlice } from '../../stores/content/content.selectors';
@@ -17,7 +18,7 @@ import { LanguageStore } from '../../stores/language.store';
  */
 @Component({
   selector: 'app-author-detail',
-  imports: [RouterLink, TranslatePipe],
+  imports: [RouterLink, TranslatePipe, MediaUrlPipe],
   templateUrl: './author-detail.component.html',
   styleUrl: './author-detail.component.scss',
 })

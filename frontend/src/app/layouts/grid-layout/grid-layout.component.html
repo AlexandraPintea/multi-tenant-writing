@@ -8,7 +8,7 @@
     <li class="author-card">
       <a [routerLink]="['/authors', author.slug]">
         @if (author.portrait) {
-          <img [src]="author.portrait" [alt]="author.name" />
+          <img [src]="author.portrait | mediaUrl" [alt]="author.name" />
         }
         <h2>{{ author.name }}</h2>
       </a>

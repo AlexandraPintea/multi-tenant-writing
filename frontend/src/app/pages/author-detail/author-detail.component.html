@@ -1,7 +1,7 @@
 @if (author(); as loaded) {
   <article>
     @if (loaded.portrait) {
-      <img [src]="loaded.portrait" [alt]="loaded.name" class="portrait" />
+      <img [src]="loaded.portrait | mediaUrl" [alt]="loaded.name" class="portrait" />
     }
     <h1>{{ loaded.name }}</h1>
     @if (loaded.location) {
