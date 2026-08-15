@@ -12,7 +12,9 @@
   },
   "writings": {
     "title": "Texte",
-    "description": "Eseuri, ficțiune și însemnări."
+    "description": "Eseuri, ficțiune și însemnări.",
+    "readMore": "Citește mai mult",
+    "filterLabel": "Filtrează după categorie"
   },
   "authors": {
     "title": "Autori"
