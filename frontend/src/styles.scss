@@ -1,8 +1,8 @@
+// Bootstrap first: it must load before the rules below so they win on the
+// properties the design cares about, and so .visually-hidden here does not
+// silently duplicate Bootstrap's own (identical) utility further down.
+@use 'styles/bootstrap';
 @use 'styles/variables';
-/* =========================================================
-   styles.scss — replace your existing :root and body blocks
-   with these, and add the .visually-hidden utility.
-   ========================================================= */
 
 :root {
   --bg: #ffffff;
@@ -32,19 +32,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Required by the new writings template (visually-hidden h1 + date/author). */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
+/* .visually-hidden is Bootstrap's now — its helper is identical to the one this
+   file used to declare, so keeping a copy would only invite the two to drift. */
 
 /* Header: switch to Poppins to match the rest of the page. */
 .site-header {
