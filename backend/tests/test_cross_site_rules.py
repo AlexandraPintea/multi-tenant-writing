@@ -97,6 +97,16 @@ def test_admin_form_accepts_a_matching_author(roam_site, roam_author):
             "sites": [roam_site.pk],
             "authors": [roam_author.pk],
             "is_published": False,
+            "title": "A new piece",
+            "body": "Body text.",
         }
     )
     assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_admin_form_exposes_the_translated_fields():
+    """Regression: PostAdminForm once subclassed a plain ModelForm, which
+    replaced parler's TranslatableModelForm and silently dropped every
+    translated field — leaving no way to type a post's text in the admin."""
+    assert {"title", "body", "excerpt"} <= set(PostAdminForm.base_fields)
