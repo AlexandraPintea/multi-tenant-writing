@@ -13,12 +13,27 @@
             <!-- rel on every one: these all leave the site, and target=_blank
                  without noopener hands the opener to the destination. -->
             <a
-              class="nav-link p-0 link-dark"
+              class="nav-link site-footer__link p-0 link-dark"
               [href]="link.href"
+              [attr.title]="link.label"
               target="_blank"
               rel="noopener noreferrer"
             >
-              {{ link.label }}
+              <!-- The icon is decorative because the name sits next to it in
+                   visually-hidden text: an aria-label here would give the link
+                   two accessible names and read one of them twice. -->
+              <svg
+                class="site-footer__icon"
+                viewBox="0 0 16 16"
+                width="18"
+                height="18"
+                fill="currentColor"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path [attr.d]="link.icon" />
+              </svg>
+              <span class="visually-hidden">{{ link.label }}</span>
             </a>
           </li>
         }
