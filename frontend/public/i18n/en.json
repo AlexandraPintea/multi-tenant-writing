@@ -12,7 +12,9 @@
   },
   "writings": {
     "title": "Writings",
-    "description": "Essays, fiction and notes."
+    "description": "Essays, fiction and notes.",
+    "readMore": "Read More",
+    "filterLabel": "Filter by category"
   },
   "authors": {
     "title": "Authors"
