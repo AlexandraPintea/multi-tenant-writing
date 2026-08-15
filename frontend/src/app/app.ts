@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
-import { LanguageToggle } from './components/language-toggle/language-toggle';
+import { LanguageToggleComponent } from './components/language-toggle/language-toggle.component';
 import { SiteConfigStore } from './stores/site-config.store';
 
 /**
@@ -13,7 +13,7 @@ import { SiteConfigStore } from './stores/site-config.store';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, LanguageToggle],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, LanguageToggleComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

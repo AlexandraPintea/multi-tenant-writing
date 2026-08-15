@@ -1,0 +1,26 @@
+@if (post(); as loaded) {
+  <article>
+    <p class="meta">
+      @if (loaded.category) {
+        <span class="meta__category">{{ loaded.category.name }}</span>
+      }
+      <time [attr.datetime]="loaded.published_at">
+        {{ loaded.published_at | date: 'longDate' }}
+      </time>
+      @if (loaded.author) {
+        <span>{{ loaded.author.name }}</span>
+      }
+    </p>
+    <h1>{{ loaded.title }}</h1>
+    <div class="body">{{ loaded.body }}</div>
+  </article>
+} @else if (notInLanguage()) {
+  <section class="unavailable">
+    <p>
+      {{ 'post.notInLanguage' | translate: { languages: availableLanguageNames() } }}
+    </p>
+    <a [routerLink]="['/writings']">{{ 'writings.title' | translate }} →</a>
+  </section>
+} @else {
+  <p>{{ 'common.notFound' | translate }}</p>
+}

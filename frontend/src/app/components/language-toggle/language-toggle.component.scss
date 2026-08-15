@@ -1,0 +1,27 @@
+.language-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.language-toggle__option {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: inherit;
+  cursor: pointer;
+}
+
+.language-toggle__option.is-active {
+  text-decoration: underline;
+  color: var(--accent);
+}
+
+/* Dimmed, not hidden: the control keeps its shape between pages. */
+.language-toggle__option.is-unavailable {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

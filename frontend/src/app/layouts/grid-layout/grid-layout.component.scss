@@ -1,0 +1,23 @@
+.author-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 2rem;
+  list-style: none;
+  padding: 0;
+}
+
+.author-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.author-card a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.author-card__location {
+  font-size: 0.85rem;
+  color: var(--accent);
+}

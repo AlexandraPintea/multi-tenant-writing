@@ -11,7 +11,7 @@ import { LoadPostDetail } from '../../stores/content/content.actions';
 import { ContentState } from '../../stores/content/content.state';
 import { LanguageStore } from '../../stores/language.store';
 import { SiteConfigStore } from '../../stores/site-config.store';
-import { LanguageToggle } from './language-toggle';
+import { LanguageToggleComponent } from './language-toggle.component';
 
 /**
  * The four states from architecture §4.3, asserted through aria rather than
@@ -22,8 +22,8 @@ import { LanguageToggle } from './language-toggle';
 @Component({ template: '' })
 class Blank {}
 
-describe('LanguageToggle', () => {
-  let fixture: ComponentFixture<LanguageToggle>;
+describe('LanguageToggleComponent', () => {
+  let fixture: ComponentFixture<LanguageToggleComponent>;
 
   function configureSite(enabled: string[], defaultLanguage = 'en') {
     patchState(TestBed.inject(SiteConfigStore) as never, {
@@ -79,7 +79,7 @@ describe('LanguageToggle', () => {
     });
     translate.use('en');
 
-    fixture = TestBed.createComponent(LanguageToggle);
+    fixture = TestBed.createComponent(LanguageToggleComponent);
   });
 
   it('renders nothing on a single-language site', async () => {

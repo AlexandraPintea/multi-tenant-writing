@@ -3,10 +3,10 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
-import { SeoService } from '../core/seo';
-import { LoadAuthorDetail } from '../stores/content/content.actions';
-import { authorOf, selectContentSlice } from '../stores/content/content.selectors';
-import { LanguageStore } from '../stores/language.store';
+import { SeoService } from '../../core/seo';
+import { LoadAuthorDetail } from '../../stores/content/content.actions';
+import { authorOf, selectContentSlice } from '../../stores/content/content.selectors';
+import { LanguageStore } from '../../stores/language.store';
 
 /**
  * One author's profile and their work on *this* site.
@@ -18,48 +18,10 @@ import { LanguageStore } from '../stores/language.store';
 @Component({
   selector: 'app-author-detail',
   imports: [RouterLink, TranslatePipe],
-  template: `
-    @if (author(); as loaded) {
-      <article>
-        @if (loaded.portrait) {
-          <img [src]="loaded.portrait" [alt]="loaded.name" class="portrait" />
-        }
-        <h1>{{ loaded.name }}</h1>
-        @if (loaded.location) {
-          <p class="location">{{ loaded.location }}</p>
-        }
-        <p class="bio">{{ loaded.bio }}</p>
-
-        <ul class="posts">
-          @for (post of loaded.posts ?? []; track post.slug) {
-            <li>
-              <a [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
-            </li>
-          } @empty {
-            <li>{{ 'common.nothingYet' | translate }}</li>
-          }
-        </ul>
-      </article>
-    } @else {
-      <p>{{ 'common.notFound' | translate }}</p>
-    }
-  `,
-  styles: `
-    .portrait {
-      max-width: 16rem;
-      aspect-ratio: 1;
-      object-fit: cover;
-    }
-    .location {
-      color: var(--accent);
-    }
-    .posts {
-      list-style: none;
-      padding: 0;
-    }
-  `,
+  templateUrl: './author-detail.component.html',
+  styleUrl: './author-detail.component.scss',
 })
-export class AuthorDetail {
+export class AuthorDetailComponent {
   readonly slug = input.required<string>();
 
   private readonly store = inject(Store);

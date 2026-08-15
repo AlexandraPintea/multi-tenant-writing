@@ -1,0 +1,14 @@
+.portrait {
+  max-width: 16rem;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.location {
+  color: var(--accent);
+}
+
+.posts {
+  list-style: none;
+  padding: 0;
+}

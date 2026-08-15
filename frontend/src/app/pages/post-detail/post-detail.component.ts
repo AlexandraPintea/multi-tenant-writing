@@ -9,10 +9,10 @@ import {
   isNotInLanguageOf,
   postOf,
   selectContentSlice,
-} from '../stores/content/content.selectors';
-import { SeoService } from '../core/seo';
-import { LoadPostDetail } from '../stores/content/content.actions';
-import { LanguageStore } from '../stores/language.store';
+} from '../../stores/content/content.selectors';
+import { SeoService } from '../../core/seo';
+import { LoadPostDetail } from '../../stores/content/content.actions';
+import { LanguageStore } from '../../stores/language.store';
 
 /**
  * A single piece.
@@ -26,54 +26,10 @@ import { LanguageStore } from '../stores/language.store';
 @Component({
   selector: 'app-post-detail',
   imports: [RouterLink, TranslatePipe, DatePipe],
-  template: `
-    @if (post(); as loaded) {
-      <article>
-        <p class="meta">
-          @if (loaded.category) {
-            <span class="meta__category">{{ loaded.category.name }}</span>
-          }
-          <time [attr.datetime]="loaded.published_at">
-            {{ loaded.published_at | date: 'longDate' }}
-          </time>
-          @if (loaded.author) {
-            <span>{{ loaded.author.name }}</span>
-          }
-        </p>
-        <h1>{{ loaded.title }}</h1>
-        <div class="body">{{ loaded.body }}</div>
-      </article>
-    } @else if (notInLanguage()) {
-      <section class="unavailable">
-        <p>
-          {{ 'post.notInLanguage' | translate: { languages: availableLanguageNames() } }}
-        </p>
-        <a [routerLink]="['/writings']">{{ 'writings.title' | translate }} →</a>
-      </section>
-    } @else {
-      <p>{{ 'common.notFound' | translate }}</p>
-    }
-  `,
-  styles: `
-    article {
-      max-width: 42rem;
-    }
-    .meta {
-      display: flex;
-      gap: 0.75rem;
-      font-size: 0.85rem;
-      opacity: 0.7;
-    }
-    .meta__category {
-      color: var(--accent);
-    }
-    .body {
-      white-space: pre-wrap;
-      line-height: 1.7;
-    }
-  `,
+  templateUrl: './post-detail.component.html',
+  styleUrl: './post-detail.component.scss',
 })
-export class PostDetail {
+export class PostDetailComponent {
   /** Bound from the route param via withComponentInputBinding(). */
   readonly slug = input.required<string>();
 
