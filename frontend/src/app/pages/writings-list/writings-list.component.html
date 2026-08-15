@@ -1,23 +1,74 @@
-<h1>{{ 'writings.title' | translate }}</h1>
+<!-- Tabs replace the visible heading (reference design); the h1 stays for a11y/SEO. -->
+<h1 class="visually-hidden">{{ 'writings.title' | translate }}</h1>
 
-@for (post of posts(); track post.slug) {
-  <article class="preview">
-    <p class="preview__meta">
+@if (categories().length > 1) {
+  <nav class="writings__tabs" [attr.aria-label]="'writings.filterLabel' | translate">
+    @for (category of categories(); track category.slug) {
+      <button
+        type="button"
+        class="writings__tab"
+        [class.is-active]="activeCategory() === category.slug"
+        [attr.aria-pressed]="activeCategory() === category.slug"
+        (click)="toggleCategory(category.slug)"
+      >
+        {{ category.name }}
+      </button>
+    }
+  </nav>
+}
+
+@for (post of visiblePosts(); track post.slug) {
+  <article class="preview" [class.preview--no-cover]="!post.cover_image">
+    @if (post.cover_image) {
+      <a
+        class="preview__media"
+        [routerLink]="['/writings', post.slug]"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <!-- TODO: swap alt to the serializer's alt/caption field once it exposes one. -->
+        <img
+          class="preview__cover"
+          [src]="post.cover_image | mediaUrl"
+          [alt]="post.title"
+          loading="lazy"
+          decoding="async"
+        />
+      </a>
+    }
+
+    <div class="preview__body">
       @if (post.category) {
-        <span class="preview__category">{{ post.category.name }}</span>
+        <p class="preview__category">{{ post.category.name }}</p>
       }
-      <time [attr.datetime]="post.published_at">
-        {{ post.published_at | date: 'longDate' }}
-      </time>
-      @if (post.author) {
-        <span>{{ post.author.name }}</span>
-      }
-    </p>
-    <h2>
-      <a [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
-    </h2>
-    <p>{{ post.excerpt }}</p>
+
+      <h2 class="preview__title">
+        <a [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
+      </h2>
+
+      <p class="preview__excerpt">{{ post.excerpt }}</p>
+
+      <a class="preview__more" [routerLink]="['/writings', post.slug]">
+        {{ 'writings.readMore' | translate }}
+      </a>
+
+      <!--
+        The reference shows only the category in the list, but dropping the date and
+        author entirely costs structured data. Kept in the DOM, out of the visual design.
+        published_at is nullable — guard it, or `| date` renders an empty <time>.
+      -->
+      <p class="preview__meta visually-hidden">
+        @if (post.published_at) {
+          <time [attr.datetime]="post.published_at">
+            {{ post.published_at | date: 'longDate' }}
+          </time>
+        }
+        @if (post.author) {
+          <span>{{ post.author.name }}</span>
+        }
+      </p>
+    </div>
   </article>
 } @empty {
-  <p>{{ 'common.nothingYet' | translate }}</p>
+  <p class="writings__empty">{{ 'common.nothingYet' | translate }}</p>
 }
