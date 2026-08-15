@@ -1,13 +1,17 @@
 import { Component, computed, inject } from '@angular/core';
 
 import { SiteConfigStore } from '../../stores/site-config.store';
+import { socialIconPath, socialSortKey } from './social-icons';
 
 /** One entry from Site.social_links, resolved into something renderable. */
 interface SocialLink {
   /** The raw key, e.g. "instagram". Used to label the link. */
   key: string;
   href: string;
+  /** Not rendered visibly — the icon is. Carried for assistive tech and tooltip. */
   label: string;
+  /** SVG path data; the globe for a key we have no glyph for. */
+  icon: string;
 }
 
 /** Keys whose value is an address rather than a URL. */
@@ -21,7 +25,10 @@ const MAILTO_KEYS = ['email', 'mail', 'e-mail'];
  *
  * The keys are free-form (requirements: "email, instagram, facebook or others"),
  * so nothing here enumerates networks. A key that arrives tomorrow renders
- * tomorrow, labelled from the key itself.
+ * tomorrow, with the globe icon and a label taken from the key itself.
+ *
+ * Only the icon shows; the network name rides along as visually-hidden text so
+ * the link still has an accessible name and a tooltip.
  */
 @Component({
   selector: 'app-site-footer',
@@ -40,7 +47,14 @@ export class SiteFooterComponent {
         key,
         href: this.href(key, value.trim()),
         label: this.label(key),
-      })),
+        icon: socialIconPath(key),
+      }))
+      // jsonb does not preserve the key order the admin typed, so impose one.
+      .sort((a, b) => {
+        const [rankA, nameA] = socialSortKey(a.key);
+        const [rankB, nameB] = socialSortKey(b.key);
+        return rankA - rankB || nameA.localeCompare(nameB);
+      }),
   );
 
   /**

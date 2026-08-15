@@ -5,6 +5,7 @@ import { patchState } from '@ngrx/signals';
 
 import { SiteConfig, SiteConfigStore } from '../../stores/site-config.store';
 import { SiteFooterComponent } from './site-footer.component';
+import { SOCIAL_ICON_PATHS } from './social-icons';
 
 describe('SiteFooterComponent', () => {
   let fixture: ComponentFixture<SiteFooterComponent>;
@@ -42,17 +43,76 @@ describe('SiteFooterComponent', () => {
     fixture = TestBed.createComponent(SiteFooterComponent);
   });
 
-  it('renders whatever networks the tenant defines, labelled from the key', async () => {
+  function iconPaths() {
+    return links().map((a) => a.querySelector('svg path')?.getAttribute('d'));
+  }
+
+  it('renders whatever networks the tenant defines', async () => {
     configureSite({
       social_links: { instagram: 'https://instagram.com/x', facebook: 'https://fb.com/x' },
     });
     await fixture.whenStable();
 
-    expect(links().map((a) => a.textContent?.trim())).toEqual(['Instagram', 'Facebook']);
+    expect(iconPaths()).toEqual([SOCIAL_ICON_PATHS['instagram'], SOCIAL_ICON_PATHS['facebook']]);
     expect(links().map((a) => a.getAttribute('href'))).toEqual([
       'https://instagram.com/x',
       'https://fb.com/x',
     ]);
+  });
+
+  it('orders the row itself rather than trusting the key order', async () => {
+    // Postgres stores this field as jsonb, which does not keep the order the
+    // admin typed — {email, instagram, facebook} arrives alphabetised. Feed it
+    // in a deliberately wrong order and expect the display order back.
+    configureSite({
+      social_links: {
+        goodreads: 'https://goodreads.com/x',
+        facebook: 'https://fb.com/x',
+        email: 'a@b.co',
+        instagram: 'https://ig/x',
+      },
+    });
+    await fixture.whenStable();
+
+    expect(links().map((a) => a.querySelector('.visually-hidden')?.textContent?.trim())).toEqual([
+      'Email',
+      'Instagram',
+      'Facebook',
+      // Unlisted networks trail the known ones, alphabetically.
+      'Goodreads',
+    ]);
+  });
+
+  it('shows the icon only, but keeps an accessible name', async () => {
+    configureSite({ social_links: { instagram: 'https://instagram.com/x' } });
+    await fixture.whenStable();
+
+    const link = links()[0];
+    // The name is present for screen readers and as a tooltip, but carried in
+    // visually-hidden text rather than rendered beside the glyph.
+    expect(link.querySelector('.visually-hidden')?.textContent?.trim()).toBe('Instagram');
+    expect(link.getAttribute('title')).toBe('Instagram');
+    // Decorative: the visually-hidden span is already the accessible name, so
+    // an exposed icon would make the link announce itself twice.
+    expect(link.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('maps common aliases to the right glyph', async () => {
+    configureSite({ social_links: { twitter: 'https://x.com/a', ig: 'https://ig/b' } });
+    await fixture.whenStable();
+
+    // Display order applies to the resolved names, so instagram precedes x.
+    expect(iconPaths()).toEqual([SOCIAL_ICON_PATHS['instagram'], SOCIAL_ICON_PATHS['x']]);
+  });
+
+  it('falls back to a globe for a network we have no glyph for', async () => {
+    // Keys are free-form by design, so an unknown one must still render a link
+    // rather than an empty <svg> or a crash.
+    configureSite({ social_links: { goodreads: 'https://goodreads.com/x' } });
+    await fixture.whenStable();
+
+    expect(iconPaths()).toEqual([SOCIAL_ICON_PATHS['globe']]);
+    expect(links()[0].querySelector('.visually-hidden')?.textContent?.trim()).toBe('Goodreads');
   });
 
   it('turns a bare email address into a mailto link', async () => {

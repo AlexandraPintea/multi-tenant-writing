@@ -12,6 +12,29 @@
   list-style: none;
 }
 
+.site-footer__link {
+  // The link box is the icon, so give it a target big enough to hit: an 18px
+  // glyph alone is below the 24px minimum for a touch target.
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.site-footer__icon {
+  // currentColor on the fill plus vertical-align here: an inline SVG sits on the
+  // text baseline by default and would hang below the copyright line.
+  display: block;
+}
+
 @media (max-width: 767px) {
   :host {
     padding-inline: 6vw;
