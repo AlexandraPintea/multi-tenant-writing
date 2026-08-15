@@ -18,8 +18,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     // withComponentInputBinding lets route params and route data arrive as
-    // signal inputs (PostDetail.slug, StaticPage.pageSlug) instead of each
-    // component injecting ActivatedRoute and unpacking it by hand.
+    // signal inputs (PostDetailComponent.slug, StaticPageComponent.pageSlug)
+    // instead of each component injecting ActivatedRoute and unpacking it by
+    // hand.
     provideRouter(routes, withComponentInputBinding()),
     SiteConfigStore,
     LanguageStore,

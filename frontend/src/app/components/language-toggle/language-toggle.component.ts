@@ -35,54 +35,10 @@ const POST_DETAIL = /^\/writings\/([^/?#]+)/;
 @Component({
   selector: 'app-language-toggle',
   imports: [TranslatePipe],
-  template: `
-    @if (isBilingual()) {
-      <div class="language-toggle" role="group" [attr.aria-label]="'toggle.label' | translate">
-        @for (option of options(); track option.code) {
-          <button
-            type="button"
-            class="language-toggle__option"
-            [class.is-active]="option.isActive"
-            [class.is-unavailable]="option.isUnavailable"
-            [attr.aria-current]="option.isActive ? 'true' : null"
-            [attr.aria-disabled]="option.isUnavailable ? 'true' : null"
-            [attr.title]="option.tooltip"
-            (click)="select(option.code, option.isUnavailable)"
-          >
-            {{ option.code }}
-          </button>
-        }
-      </div>
-    }
-  `,
-  styles: `
-    .language-toggle {
-      display: inline-flex;
-      gap: 0.5rem;
-    }
-    .language-toggle__option {
-      background: none;
-      border: 0;
-      padding: 0;
-      font: inherit;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: inherit;
-      cursor: pointer;
-    }
-    .language-toggle__option.is-active {
-      text-decoration: underline;
-      color: var(--accent);
-    }
-    /* Dimmed, not hidden: the control keeps its shape between pages. */
-    .language-toggle__option.is-unavailable {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-  `,
+  templateUrl: './language-toggle.component.html',
+  styleUrl: './language-toggle.component.scss',
 })
-export class LanguageToggle {
+export class LanguageToggleComponent {
   private readonly siteConfig = inject(SiteConfigStore);
   private readonly languageStore = inject(LanguageStore);
   private readonly translate = inject(TranslateService);

@@ -1,0 +1,26 @@
+<section class="hero">
+  <h1>{{ siteName() }}</h1>
+</section>
+
+<section class="recent">
+  <h2>{{ 'home.recent' | translate }}</h2>
+  @for (post of recentPosts(); track post.slug) {
+    <article class="preview">
+      <p class="preview__meta">
+        @if (post.category) {
+          <span class="preview__category">{{ post.category.name }}</span>
+        }
+        <time [attr.datetime]="post.published_at">
+          {{ post.published_at | date: 'longDate' }}
+        </time>
+      </p>
+      <h3>
+        <a [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
+      </h3>
+      <p class="preview__excerpt">{{ post.excerpt }}</p>
+    </article>
+  } @empty {
+    <p>{{ 'common.nothingYet' | translate }}</p>
+  }
+  <a routerLink="/writings">{{ 'home.allWritings' | translate }} →</a>
+</section>

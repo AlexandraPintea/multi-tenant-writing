@@ -5,20 +5,20 @@ import { provideRouter } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { provideStore, Store } from '@ngxs/store';
 
-import { environment } from '../../environments/environment';
-import { LoadPostDetail } from '../stores/content/content.actions';
-import { ContentState } from '../stores/content/content.state';
-import { LanguageStore } from '../stores/language.store';
-import { SiteConfigStore } from '../stores/site-config.store';
-import { PostDetail } from './post-detail';
+import { environment } from '../../../environments/environment';
+import { LoadPostDetail } from '../../stores/content/content.actions';
+import { ContentState } from '../../stores/content/content.state';
+import { LanguageStore } from '../../stores/language.store';
+import { SiteConfigStore } from '../../stores/site-config.store';
+import { PostDetailComponent } from './post-detail.component';
 
 /**
  * The three states a post page can be in. The third one — present on this site
  * but not in this language — is the reason the API answers a missing
  * translation with a 404 that carries available_languages.
  */
-describe('PostDetail', () => {
-  let fixture: ComponentFixture<PostDetail>;
+describe('PostDetailComponent', () => {
+  let fixture: ComponentFixture<PostDetailComponent>;
   let http: HttpTestingController;
 
   function text(): string {
@@ -48,7 +48,7 @@ describe('PostDetail', () => {
     });
     translate.use('en');
 
-    fixture = TestBed.createComponent(PostDetail);
+    fixture = TestBed.createComponent(PostDetailComponent);
     fixture.componentRef.setInput('slug', 'the-power-of-words');
   });
 

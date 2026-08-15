@@ -2,10 +2,10 @@ import { Component, computed, effect, inject, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
-import { SeoService } from '../core/seo';
-import { LoadPage } from '../stores/content/content.actions';
-import { pageOf, selectContentSlice } from '../stores/content/content.selectors';
-import { LanguageStore } from '../stores/language.store';
+import { SeoService } from '../../core/seo';
+import { LoadPage } from '../../stores/content/content.actions';
+import { pageOf, selectContentSlice } from '../../stores/content/content.selectors';
+import { LanguageStore } from '../../stores/language.store';
 
 /**
  * About and Contact. One component for both: they differ only by the slug the
@@ -15,27 +15,10 @@ import { LanguageStore } from '../stores/language.store';
 @Component({
   selector: 'app-static-page',
   imports: [TranslatePipe],
-  template: `
-    @if (page(); as loaded) {
-      <article>
-        <h1>{{ loaded.title }}</h1>
-        <div class="body">{{ loaded.content }}</div>
-      </article>
-    } @else {
-      <p>{{ 'common.notFound' | translate }}</p>
-    }
-  `,
-  styles: `
-    article {
-      max-width: 42rem;
-    }
-    .body {
-      white-space: pre-wrap;
-      line-height: 1.7;
-    }
-  `,
+  templateUrl: './static-page.component.html',
+  styleUrl: './static-page.component.scss',
 })
-export class StaticPage {
+export class StaticPageComponent {
   /** From route data, not the URL — /about and /contact are fixed paths. */
   readonly pageSlug = input.required<string>();
 

@@ -1,0 +1,18 @@
+@if (isBilingual()) {
+  <div class="language-toggle" role="group" [attr.aria-label]="'toggle.label' | translate">
+    @for (option of options(); track option.code) {
+      <button
+        type="button"
+        class="language-toggle__option"
+        [class.is-active]="option.isActive"
+        [class.is-unavailable]="option.isUnavailable"
+        [attr.aria-current]="option.isActive ? 'true' : null"
+        [attr.aria-disabled]="option.isUnavailable ? 'true' : null"
+        [attr.title]="option.tooltip"
+        (click)="select(option.code, option.isUnavailable)"
+      >
+        {{ option.code }}
+      </button>
+    }
+  </div>
+}

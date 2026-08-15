@@ -1,9 +1,9 @@
 import { Component, effect, inject } from '@angular/core';
 
-import { SeoService } from '../core/seo';
-import { SiteConfigStore } from '../stores/site-config.store';
-import { EditorialLayout } from './editorial-layout';
-import { GridLayout } from './grid-layout';
+import { SeoService } from '../../core/seo';
+import { SiteConfigStore } from '../../stores/site-config.store';
+import { EditorialLayoutComponent } from '../editorial-layout/editorial-layout.component';
+import { GridLayoutComponent } from '../grid-layout/grid-layout.component';
 
 /**
  * The home route for both tenants.
@@ -18,19 +18,11 @@ import { GridLayout } from './grid-layout';
  */
 @Component({
   selector: 'app-site-home',
-  imports: [EditorialLayout, GridLayout],
-  template: `
-    @switch (layout()) {
-      @case ('grid') {
-        <app-grid-layout />
-      }
-      @default {
-        <app-editorial-layout />
-      }
-    }
-  `,
+  imports: [EditorialLayoutComponent, GridLayoutComponent],
+  templateUrl: './site-home.component.html',
+  styleUrl: './site-home.component.scss',
 })
-export class SiteHome {
+export class SiteHomeComponent {
   private readonly siteConfig = inject(SiteConfigStore);
   private readonly seo = inject(SeoService);
 

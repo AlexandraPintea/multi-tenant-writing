@@ -1,0 +1,8 @@
+@if (page(); as loaded) {
+  <article>
+    <h1>{{ loaded.title }}</h1>
+    <div class="body">{{ loaded.content }}</div>
+  </article>
+} @else {
+  <p>{{ 'common.notFound' | translate }}</p>
+}

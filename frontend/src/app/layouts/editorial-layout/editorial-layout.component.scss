@@ -1,0 +1,25 @@
+.hero h1 {
+  font-family: var(--font-display);
+  margin-bottom: 2rem;
+}
+
+.preview {
+  margin-block: 2rem;
+  max-width: 42rem;
+}
+
+.preview__meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.preview__category {
+  color: var(--accent);
+}
+
+.preview h3 a {
+  color: inherit;
+  text-decoration: none;
+}

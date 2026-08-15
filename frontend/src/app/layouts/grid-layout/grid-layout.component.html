@@ -1,0 +1,23 @@
+<section class="intro">
+  <h1>{{ siteName() }}</h1>
+  <p>{{ 'home.collective' | translate }}</p>
+</section>
+
+<ul class="author-grid">
+  @for (author of authors(); track author.slug) {
+    <li class="author-card">
+      <a [routerLink]="['/authors', author.slug]">
+        @if (author.portrait) {
+          <img [src]="author.portrait" [alt]="author.name" />
+        }
+        <h2>{{ author.name }}</h2>
+      </a>
+      @if (author.location) {
+        <p class="author-card__location">{{ author.location }}</p>
+      }
+      <p class="author-card__bio">{{ author.bio }}</p>
+    </li>
+  } @empty {
+    <li>{{ 'common.nothingYet' | translate }}</li>
+  }
+</ul>

@@ -29,39 +29,46 @@ export const routes: Routes = [
     // posts, the grid layout lists authors, and which one renders is not known
     // until site-config arrives.
     resolve: { posts: postListResolver, authors: authorListResolver },
-    loadComponent: () => import('./layouts/site-home').then((m) => m.SiteHome),
+    loadComponent: () =>
+      import('./layouts/site-home/site-home.component').then((m) => m.SiteHomeComponent),
   },
   {
     path: 'writings',
     resolve: { posts: postListResolver },
-    loadComponent: () => import('./pages/writings-list').then((m) => m.WritingsList),
+    loadComponent: () =>
+      import('./pages/writings-list/writings-list.component').then((m) => m.WritingsListComponent),
   },
   {
     path: 'writings/:slug',
     resolve: { post: postDetailResolver },
-    loadComponent: () => import('./pages/post-detail').then((m) => m.PostDetail),
+    loadComponent: () =>
+      import('./pages/post-detail/post-detail.component').then((m) => m.PostDetailComponent),
   },
   {
     path: 'authors',
     resolve: { authors: authorListResolver },
-    loadComponent: () => import('./pages/authors-list').then((m) => m.AuthorsList),
+    loadComponent: () =>
+      import('./pages/authors-list/authors-list.component').then((m) => m.AuthorsListComponent),
   },
   {
     path: 'authors/:slug',
     resolve: { author: authorDetailResolver },
-    loadComponent: () => import('./pages/author-detail').then((m) => m.AuthorDetail),
+    loadComponent: () =>
+      import('./pages/author-detail/author-detail.component').then((m) => m.AuthorDetailComponent),
   },
   {
     path: 'about',
     data: { pageSlug: 'about' },
     resolve: { page: pageResolver },
-    loadComponent: () => import('./pages/static-page').then((m) => m.StaticPage),
+    loadComponent: () =>
+      import('./pages/static-page/static-page.component').then((m) => m.StaticPageComponent),
   },
   {
     path: 'contact',
     data: { pageSlug: 'contact' },
     resolve: { page: pageResolver },
-    loadComponent: () => import('./pages/static-page').then((m) => m.StaticPage),
+    loadComponent: () =>
+      import('./pages/static-page/static-page.component').then((m) => m.StaticPageComponent),
   },
   { path: '**', redirectTo: '' },
 ];

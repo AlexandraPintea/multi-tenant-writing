@@ -5,10 +5,10 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
-import { SeoService } from '../core/seo';
-import { LoadPostList } from '../stores/content/content.actions';
-import { postListOf, selectContentSlice } from '../stores/content/content.selectors';
-import { LanguageStore } from '../stores/language.store';
+import { SeoService } from '../../core/seo';
+import { LoadPostList } from '../../stores/content/content.actions';
+import { postListOf, selectContentSlice } from '../../stores/content/content.selectors';
+import { LanguageStore } from '../../stores/language.store';
 
 /**
  * The full archive. Same preview shape as the homepage block, and no category
@@ -21,52 +21,10 @@ import { LanguageStore } from '../stores/language.store';
 @Component({
   selector: 'app-writings-list',
   imports: [RouterLink, TranslatePipe, DatePipe],
-  template: `
-    <h1>{{ 'writings.title' | translate }}</h1>
-
-    @for (post of posts(); track post.slug) {
-      <article class="preview">
-        <p class="preview__meta">
-          @if (post.category) {
-            <span class="preview__category">{{ post.category.name }}</span>
-          }
-          <time [attr.datetime]="post.published_at">
-            {{ post.published_at | date: 'longDate' }}
-          </time>
-          @if (post.author) {
-            <span>{{ post.author.name }}</span>
-          }
-        </p>
-        <h2>
-          <a [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
-        </h2>
-        <p>{{ post.excerpt }}</p>
-      </article>
-    } @empty {
-      <p>{{ 'common.nothingYet' | translate }}</p>
-    }
-  `,
-  styles: `
-    .preview {
-      margin-block: 2rem;
-      max-width: 42rem;
-    }
-    .preview__meta {
-      display: flex;
-      gap: 0.75rem;
-      font-size: 0.85rem;
-      opacity: 0.7;
-    }
-    .preview__category {
-      color: var(--accent);
-    }
-    .preview h2 a {
-      color: inherit;
-      text-decoration: none;
-    }
-  `,
+  templateUrl: './writings-list.component.html',
+  styleUrl: './writings-list.component.scss',
 })
-export class WritingsList {
+export class WritingsListComponent {
   private readonly store = inject(Store);
   private readonly content = this.store.selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
