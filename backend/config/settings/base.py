@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import dj_database_url
+from corsheaders.defaults import default_headers
 from decouple import Csv, config
 
 # backend/
@@ -132,3 +133,10 @@ REST_FRAMEWORK = {
 # settings/local.py; production must name the SSR container's origin explicitly
 # via the environment (architecture §7.1).
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="", cast=Csv())
+
+# X-Site-Domain is a custom header, so a browser sends a preflight OPTIONS
+# first, and django-cors-headers' default allow-list does not include it — the
+# preflight failed and every client-side API call died before it was sent.
+# Server-side rendering is unaffected (no browser, no preflight), which is
+# exactly why this stayed invisible until the e2e suite drove a real browser.
+CORS_ALLOW_HEADERS = (*default_headers, "x-site-domain")

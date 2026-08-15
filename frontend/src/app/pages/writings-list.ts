@@ -6,6 +6,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
 import { SeoService } from '../core/seo';
+import { LoadPostList } from '../stores/content/content.actions';
 import { postListOf, selectContentSlice } from '../stores/content/content.selectors';
 import { LanguageStore } from '../stores/language.store';
 
@@ -66,7 +67,8 @@ import { LanguageStore } from '../stores/language.store';
   `,
 })
 export class WritingsList {
-  private readonly content = inject(Store).selectSignal(selectContentSlice);
+  private readonly store = inject(Store);
+  private readonly content = this.store.selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
   private readonly translate = inject(TranslateService);
   private readonly seo = inject(SeoService);
@@ -89,6 +91,13 @@ export class WritingsList {
   });
 
   constructor() {
+    // Route resolvers only run on navigation, so switching language while
+    // standing on this page would leave the old archive on screen. The store's
+    // cache guard makes the repeat dispatch free when nothing changed.
+    effect(() => {
+      this.store.dispatch(new LoadPostList(this.language()));
+    });
+
     effect(() => {
       const title = this.seoTitle();
       if (!title) {

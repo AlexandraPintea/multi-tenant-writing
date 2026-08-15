@@ -11,6 +11,7 @@ import {
   selectContentSlice,
 } from '../stores/content/content.selectors';
 import { SeoService } from '../core/seo';
+import { LoadPostDetail } from '../stores/content/content.actions';
 import { LanguageStore } from '../stores/language.store';
 
 /**
@@ -76,12 +77,20 @@ export class PostDetail {
   /** Bound from the route param via withComponentInputBinding(). */
   readonly slug = input.required<string>();
 
-  private readonly content = inject(Store).selectSignal(selectContentSlice);
+  private readonly store = inject(Store);
+  private readonly content = this.store.selectSignal(selectContentSlice);
   private readonly language = inject(LanguageStore).language;
   private readonly translate = inject(TranslateService);
   private readonly seo = inject(SeoService);
 
   constructor() {
+    // Switching language on a post has to fetch that language's copy — the
+    // resolver ran once, on navigation. A post already cached in this language
+    // costs nothing, and one known to lack it is never re-requested.
+    effect(() => {
+      this.store.dispatch(new LoadPostDetail(this.slug(), this.language()));
+    });
+
     // The highest-stakes unfurl in the project: a post URL pasted into Slack or
     // WhatsApp has to come back with the title, excerpt and cover image.
     effect(() => {

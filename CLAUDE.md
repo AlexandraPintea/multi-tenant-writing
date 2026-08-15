@@ -8,7 +8,7 @@ A multi-tenant rebuild of [alexandrapintea.eu](https://alexandrapintea.eu) and [
 
 The canonical roadmap is `docs/claude-code-playbook.md` — it's a numbered, phase-by-phase plan (Phase 0 setup → Phase 7 CD), and each section spells out scope, learning goal, and verification steps. When the user references "Phase X.Y" or "the playbook", that's the file. Architecture decisions and the requirements spec live in `docs/architecture-v4-edited.docx` and `docs/requirements-v4-edited.docx`; treat the `*-edited.docx` variants as authoritative over the un-edited originals. Later decisions are recorded in the architecture doc as **red paragraphs** — §3.2 carries the Post/Author M2M revision. The playbook's addenda (A.1 Category, A.2 Post/Author M2M) sit after Phase 8 and are written in the same prompt-shaped format as the numbered steps.
 
-Current state (August 2026): Phase 1 is complete — 1.1 through 1.7, plus both playbook addenda (A.1 Category, A.2 Post/Author M2M). The backend has a 77-test pytest suite and a GitHub Actions workflow. On the frontend, 2.1 (Angular SSR scaffold) and 2.2 (siteConfig SignalStore) are done; **2.3 onward is not started** — there is no language store, no NgRx content slice, no routes (`app.routes.ts` is an empty array), and no components.
+Current state (August 2026): Phase 1 is complete — 1.1 through 1.7, plus both playbook addenda (A.1 Category, A.2 Post/Author M2M) — and the backend has a 78-test pytest suite behind a GitHub Actions workflow. Phase 2 is built out through 2.9: the SSR scaffold (2.1), `SiteConfigStore` (2.2), `LanguageStore` (2.3), the NGXS content slice (2.4), per-site routing with resolvers (2.5), the EN/RO toggle (2.6), Open Graph metadata (2.7), a 48-test Jest suite (2.8) and Playwright e2e across both tenants (2.9). Everything through 2.8 is merged to `main`; **2.9 is still on `phase-2.9-playwright`**. What is left in Phase 2 is **2.10, the frontend CI workflow**, and then Phase 3 onward.
 
 **Branch from `main`.** Finished work is merged there via GitHub PRs, and local `main` is usually behind what was merged, so run `git fetch origin main:main` first. Branch names follow the playbook step: `phase-1.6-pytest-suite`, `phase-a1-category`.
 
@@ -43,6 +43,7 @@ It overrides `get_queryset` (which also backs `get_object`, so a hand-typed chan
 Two admin traps already hit here:
 - **Never use `autocomplete_fields` for `sites`.** Autocomplete resolves choices through the target model's admin, and `SiteAdmin` is unscoped, so it would offer the other tenant. `filter_horizontal` goes through `formfield_for_manytomany` and is scoped.
 - **`list_filter` on a related field needs `RelatedOnlyFieldListFilter`.** A bare `"category"` enumerates every row in the table; the related-only variant derives choices from `model_admin.get_queryset(request)`.
+- **A custom `form` on a `TranslatableAdmin` must subclass `TranslatableModelForm`.** Setting `form` replaces parler's default, and the translated fields are not model fields on the parent, so `fields = "__all__"` silently drops them — `PostAdminForm` was a plain `ModelForm` and the Post add page rendered with no title, body or excerpt at all. It fails quietly: no error, just a form missing the fields that matter.
 
 `python manage.py seed_groups` creates the two groups and the demo accounts. **When you add a model the editors should manage, add it to `MANAGED_MODELS` in that command** — a missing entry is a 403 on that model's changelist, which is exactly what happened when Category landed.
 
@@ -52,7 +53,7 @@ Two admin traps already hit here:
 
 - `?lang=` not in the site's `enabled_languages` → silently coerced to `site.default_language`.
 - Post **list**: only posts that have a translation in the active language appear (filters via `translations__language_code=lang` + `distinct()`).
-- Post **detail**: if the post exists on this site but lacks the requested language, raise `PostNotAvailableInLanguage` — a custom DRF exception that returns a **404 with body `{"detail": "...", "available_languages": [...]}`**. The planned frontend NgRx effect dispatches a typed `loadPostDetailNotInLanguage` action on that shape, so don't reduce it back to a plain 404 string. This is documented in architecture §4.3.
+- Post **detail**: if the post exists on this site but lacks the requested language, raise `PostNotAvailableInLanguage` — a custom DRF exception that returns a **404 with body `{"detail": "...", "available_languages": [...]}`**. The frontend's NGXS content state dispatches `LoadPostDetailNotInLanguage` on that shape rather than its failure action, and the language toggle dims the missing language off the `available_languages` it carries — so don't reduce it back to a plain 404 string. This is documented in architecture §4.3.
 
 A post that isn't published to *this site* is a different failure and returns a **plain 404 with no hint** — offering `available_languages` there would invite the frontend to suggest a language switch that cannot help. Both shapes are covered in `tests/test_api_language_coverage.py`.
 
@@ -88,7 +89,7 @@ python manage.py seed_groups               # Idempotent — the two groups + dem
 python manage.py createsuperuser
 python manage.py runserver 8001            # 8001, matching frontend environment.development.ts
 
-# Tests (77 of them; run from backend/, not the repo root)
+# Tests (78 of them; run from backend/, not the repo root)
 pytest
 pytest tests/test_site_middleware.py::test_known_host_resolves_to_its_site
 
@@ -106,9 +107,24 @@ python -m black .
 
 ### Frontend
 
+```powershell
+# From frontend/:
+npm start                                   # ng serve on 4200 (dev SSR via Vite)
+npm run build -- --configuration development
+npm run serve:ssr:writing-frontend          # built SSR server on 4000
+npm test                                    # Jest (48 tests) — never `ng test`
+npx playwright test                         # e2e; needs a build + the backend up
+```
+
 Scaffolded (playbook 2.1) at `frontend/`: **Angular 21**, standalone throughout, SSR via `src/server.ts`, ngx-translate with `public/i18n/{en,ro}.json`, and `src/styles/_variables.scss` holding fallback theme custom properties. `SiteConfigStore` (`src/app/stores/site-config.store.ts`, playbook 2.2) is an `@ngrx/signals` store that fetches `/api/site-config/` and applies the theme to `document.documentElement` — guarded by `isPlatformBrowser`, since that effect is meaningless during SSR. It resolves the tenant from `window.location.host` in the browser and from the `REQUEST` token's Host header on the server, forwarded as `X-Site-Domain`.
 
-Still to build: 2.5 routes/layouts, 2.6 EN/RO toggle, 2.7 Open Graph meta, 2.9 Playwright.
+**One route tree for both tenants** (`src/app/app.routes.ts`, playbook 2.5). Every route is lazy via `loadComponent`, and each names a resolver from `src/app/routes/content.resolvers.ts` that **returns the NGXS dispatch observable** — that is what makes the router wait and SSR emit finished HTML rather than an empty shell, which is the whole justification for server rendering here. There is no per-site route table: `SiteHome` switches on the API's `layout` key (`grid` → `GridLayout`, anything else → `EditorialLayout`), so a third site is a database row, not a build target. `/about` and `/contact` share `StaticPage`, passing the slug through route `data`.
+
+`LanguageStore` (2.3) resolves the initial language from **localStorage in the browser and `Accept-Language` on the server** — two different sources because the browser's does not exist during SSR. They can disagree, and v1 accepts the resulting flicker; a cookie the server can read is the upgrade if it becomes annoying. Only an explicit choice is persisted: writing on initial resolution would lock a first-time reader into whatever default they landed on. `LanguageToggle` (2.6) renders nothing on a single-language site, and **dims rather than hides** a language a post does not exist in — hiding makes the control jump between pages, and leaving it clickable walks the reader into an empty page (§9 risk row). `SeoService` (`src/app/core/seo.ts`, 2.7) writes title, Open Graph, Twitter Card and canonical during the server render, always as absolute URLs, and *removes* a tag rather than leaving a stale one, so navigating from a post with a cover image to one without does not unfurl the wrong picture.
+
+**`ServerTranslateLoader`** (`src/app/i18n/server-translate.loader.ts`) reads `i18n/*.json` off disk during SSR instead of over HTTP: the browser loader's relative `/i18n/en.json` resolves against the *inbound* Host on the server, which once made the SSR process download the live Squarespace homepage. It is provided only in `app.config.server.ts`, so `node:fs` never reaches the client bundle, and it wraps the read in `PendingTasks` — SSR waits on HttpClient automatically but has no idea a bare fs promise is outstanding, and without it the first Romanian render finished with every UI string blank.
+
+**Known `ng serve` noise:** that loader resolves `import.meta.dirname/../browser/i18n/<lang>.json`, a path that only exists in a real build (`dist/<app>/server/` next to `dist/<app>/browser/`). Under the Vite dev server `import.meta.dirname` is inside `.angular/vite-root/`, so every dev render logs `[i18n] could not read …\.angular\vite-root\browser\i18n\en.json (ENOENT)` and the server-rendered HTML carries untranslated keys until hydration fills them in. It is loud but harmless in dev — the `catchError` degrades to `{}` by design — and absent from a built SSR server. Don't "fix" it by pointing the browser loader at the filesystem.
 
 **State management is three slices across two libraries.** `SiteConfigStore` and `LanguageStore` are `@ngrx/signals` SignalStores. Content is **NGXS** (`src/app/stores/content/`), not classic NgRx — the docs were amended in red (requirements §4.2, architecture §5.3) when that was decided. Pin `@ngxs/store` and `@ngxs/devtools-plugin` to **21**: the current major needs Angular 22, so NGXS and Angular have to be upgraded together. There is no first-party entity adapter, so the post collection is hand-rolled and **nested by language** (`postsByLang[lang][slug]`) — one slug carries different text per language, so a flat slug key would let a language switch overwrite the other copy and the cache guard would then serve the wrong text.
 
@@ -121,6 +137,16 @@ In NGXS the HTTP lives in the `@Action` handler, so `content.state.ts` is what N
 Config lives in `jest.config.mjs` (`.mjs`, not `.ts`, so that reading the config does not require ts-node) and `setup-jest.ts`, which calls `setupZonelessTestEnv()` — the app has no `provideZoneChangeDetection`, so the zone.js environment would exercise a change-detection model production never runs. `transformIgnorePatterns` must keep transforming `@angular`, `@ngrx`, `@ngxs`, `@ngx-translate` and `rxjs`: they ship ESM, Jest runs CommonJS, and a new ESM dependency will fail with a bare `export` error in node_modules until it is added there.
 
 Both earlier open decisions are now settled: the Roam layout key is `grid` (the seeder migrates an existing `collective` value in place), and the runner is Jest, which is what requirements §4.2 and architecture §5.6 always specified.
+
+### Frontend e2e (Playwright)
+
+`frontend/e2e/` (playbook 2.9) holds `smoke`, `deep-link`, `language-toggle` and `monolingual-post` specs, run with `npx playwright test` — there is no npm script. They are e2e rather than unit tests because what they assert only exists once the whole chain is assembled: Django resolving a tenant from the Host header, SSR rendering with that tenant's data, and the HTML arriving complete **before any JavaScript runs**. A unit test can prove a component renders a title; only this proves a crawler that never executes JS sees it.
+
+**It needs a real build, not `ng serve`.** The `webServer` block starts `node dist/writing-frontend/server/server.mjs`, so run `npm run build -- --configuration development` first; Postgres and `runserver 8001` must already be up (the config lists these prerequisites but cannot start them).
+
+`e2e/tenant-proxy.mjs` stands in for nginx: a browser sets Host from the URL and will not let a test override it, and hosts-file entries need administrator rights a checkout should not require. So port **4101 → `alexandrapintea.eu`** and **4102 → `roamliterary.com`**, each forwarding to the single SSR server on 4000 with the right Host attached — which is exactly nginx's production job (architecture §6.3), making it a faithful stand-in rather than a test-only shortcut.
+
+`playwright-report/` and `test-results/` are gitignored on this branch only; until 2.9 merges they show up as untracked noise anywhere else.
 
 ## Code style
 
@@ -136,7 +162,7 @@ The dev environment is Windows + PowerShell. Bash is available via the Bash tool
 
 ### Test data
 
-`python manage.py seed_demo_data` creates `alexandrapintea.eu` (en+ro, `layout: "editorial"`) and `roamliterary.com` (en only, `layout: "collective"`), an Author profile for Alexandra on **each** site, three categories per site, an `about` Page per site, and two posts: one bilingual piece cross-posted to both sites with one author profile per site, and one English-only piece on alexandrapintea.eu.
+`python manage.py seed_demo_data` creates `alexandrapintea.eu` (en+ro, `layout: "editorial"`) and `roamliterary.com` (en only, `layout: "grid"`), an Author profile for Alexandra on **each** site, three categories per site, an `about` Page per site, and two posts: one bilingual piece cross-posted to both sites with one author profile per site, and one English-only piece on alexandrapintea.eu.
 
 Preserve both post fixtures when extending the seeder. The English-only post is what exercises the per-post language-coverage 404; the cross-posted one is what exercises the per-site author resolution. Note the two Author rows share the slug `alexandra-pintea` — that is deliberate, and it is why the A.2 bug stayed invisible until it was checked by primary key. Assert on `pk` or `bio`, never on `name`/`slug`.
 

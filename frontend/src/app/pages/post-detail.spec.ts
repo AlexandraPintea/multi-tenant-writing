@@ -99,6 +99,14 @@ describe('PostDetail', () => {
       );
     await fixture.whenStable();
 
+    // A plain failure is deliberately not cached — unlike a known language gap
+    // — so the component's language effect asks once more. Drain it.
+    http
+      .match(`${environment.API_BASE_URL}/posts/the-power-of-words/?lang=en`)
+      .forEach((request) =>
+        request.flush({ detail: '...' }, { status: 404, statusText: 'Not Found' }),
+      );
+
     // No language switch could fix this one, so it must not offer one.
     expect(text()).toContain('Not found.');
     expect(text()).not.toContain('only available in');
