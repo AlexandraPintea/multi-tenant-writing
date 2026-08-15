@@ -1,5 +1,14 @@
 <header class="site-header">
-  <a class="site-header__wordmark" routerLink="/">{{ siteName() }}</a>
+  <!-- The name is the alt text, not a caption: it keeps the wordmark readable to
+       screen readers and to anyone whose image never arrives. Sites without a
+       logo render the name as text instead. -->
+  <a class="site-header__wordmark" routerLink="/">
+    @if (logo(); as logoUrl) {
+      <img class="site-header__logo" [src]="logoUrl | mediaUrl" [alt]="siteName()" />
+    } @else {
+      {{ siteName() }}
+    }
+  </a>
 
   <nav class="site-header__nav">
     <a routerLink="/writings" routerLinkActive="is-active">{{ 'nav.writings' | translate }}</a>
