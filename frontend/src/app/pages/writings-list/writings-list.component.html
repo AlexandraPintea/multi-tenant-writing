@@ -2,12 +2,17 @@
 <h1 class="visually-hidden">{{ 'writings.title' | translate }}</h1>
 
 @if (categories().length > 1) {
-  <nav class="writings__tabs" [attr.aria-label]="'writings.filterLabel' | translate">
+  <!-- Plain .nav, not .nav-underline: the reference underlines every tab, not
+       just the active one, and marks the active one by opacity instead. -->
+  <nav
+    class="nav flex-column flex-md-row justify-content-md-center align-items-center gap-5 gap-md-8 mb-6 mb-md-7"
+    [attr.aria-label]="'writings.filterLabel' | translate"
+  >
     @for (category of categories(); track category.slug) {
       <button
         type="button"
-        class="writings__tab"
-        [class.is-active]="activeCategory() === category.slug"
+        class="nav-link writings__tab p-0 pb-2 border-0 border-bottom border-2"
+        [class.active]="activeCategory() === category.slug"
         [attr.aria-pressed]="activeCategory() === category.slug"
         (click)="toggleCategory(category.slug)"
       >
@@ -18,37 +23,42 @@
 }
 
 @for (post of visiblePosts(); track post.slug) {
-  <article class="preview" [class.preview--no-cover]="!post.cover_image">
+  <article class="preview row g-0 row-gap-4 justify-content-between align-items-center mb-6 mb-md-7">
     @if (post.cover_image) {
-      <a
-        class="preview__media"
-        [routerLink]="['/writings', post.slug]"
-        tabindex="-1"
-        aria-hidden="true"
-      >
-        <!-- TODO: swap alt to the serializer's alt/caption field once it exposes one. -->
-        <img
-          class="preview__cover"
-          [src]="post.cover_image | mediaUrl"
-          [alt]="post.title"
-          loading="lazy"
-          decoding="async"
-        />
-      </a>
+      <div class="preview__media col-12">
+        <!-- d-block on the anchor: .ratio sizes itself with width:100%, which an
+             inline parent gives it nothing to resolve against. -->
+        <a class="d-block" [routerLink]="['/writings', post.slug]" tabindex="-1" aria-hidden="true">
+          <!-- TODO: swap alt to the serializer's alt/caption field once it exposes one. -->
+          <span class="ratio ratio-1x1 d-block">
+            <img
+              class="object-fit-cover w-100 h-100"
+              [src]="post.cover_image | mediaUrl"
+              [alt]="post.title"
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+        </a>
+      </div>
     }
 
-    <div class="preview__body">
+    <!-- Full width when there is no cover: cover_image is nullable. -->
+    <div class="col-12" [class.preview__body]="post.cover_image">
       @if (post.category) {
-        <p class="preview__category">{{ post.category.name }}</p>
+        <p class="mb-4">{{ post.category.name }}</p>
       }
 
-      <h2 class="preview__title">
-        <a [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
+      <h2 class="preview__title mb-3">
+        <a class="link-dark" [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
       </h2>
 
       <p class="preview__excerpt">{{ post.excerpt }}</p>
 
-      <a class="preview__more" [routerLink]="['/writings', post.slug]">
+      <a
+        class="link-dark text-decoration-underline link-offset-2"
+        [routerLink]="['/writings', post.slug]"
+      >
         {{ 'writings.readMore' | translate }}
       </a>
 
@@ -57,7 +67,7 @@
         author entirely costs structured data. Kept in the DOM, out of the visual design.
         published_at is nullable — guard it, or `| date` renders an empty <time>.
       -->
-      <p class="preview__meta visually-hidden">
+      <p class="visually-hidden">
         @if (post.published_at) {
           <time [attr.datetime]="post.published_at">
             {{ post.published_at | date: 'longDate' }}
@@ -70,5 +80,5 @@
     </div>
   </article>
 } @empty {
-  <p class="writings__empty">{{ 'common.nothingYet' | translate }}</p>
+  <p>{{ 'common.nothingYet' | translate }}</p>
 }
