@@ -1,18 +1,23 @@
-from django import forms
 from django.contrib import admin
 from parler.admin import TranslatableAdmin
+from parler.forms import TranslatableModelForm
 
 from admin_scoped.admin import SiteScopedAdmin
 
 from .models import Category, Page, Post
 
 
-class PostAdminForm(forms.ModelForm):
+class PostAdminForm(TranslatableModelForm):
     """Enforces the Author/Site rules where a creation can actually be caught.
 
     Post.clean() can only check saved rows — on a new Post the M2M selections
     live here in cleaned_data, not on the instance — so the real admin-side
     enforcement is this form.
+
+    TranslatableModelForm, not a plain ModelForm: setting `form` on a
+    TranslatableAdmin replaces parler's default, and title/body/excerpt are not
+    model fields on Post, so `fields = "__all__"` alone would silently drop
+    them from the add/change form.
     """
 
     class Meta:
