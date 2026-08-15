@@ -12,21 +12,74 @@
   padding-block: 4rem 6rem;
 }
 
+/* The tabs are Squarespace "tertiary" buttons on the reference, not text links,
+   and they are not dimmed: both labels are solid #000 over a 2px solid #000
+   rule, identical to each other, and hovering fills the whole padded box black
+   with white text. Measured on the live site:
+
+     font           Poppins 16px / 400        (already matches)
+     letter-spacing 1.6px = 0.1em
+     padding        11.2px 22.4px = 0.7em 1.4em
+     border-bottom  2px solid #000
+     hover          background #000, color #fff
+     transition     background-color .1s linear, color .1s linear
+
+   There is no selected state on the reference at all — clicking a category
+   navigates to a filtered URL and both buttons keep looking the same. This is a
+   real tab strip, so .active reuses the hover fill; swap it for something
+   quieter if the two should stay distinguishable. */
 .writings__tab {
-  /* .nav-link supplies colour, font and hover; the reference adds a permanent
-     rule under every tab and dims the inactive ones, so the row does not change
-     shape as the selection moves. */
-  opacity: 0.55;
-  transition: opacity 0.15s ease;
-  letter-spacing: 0.05em;
-  // currentColor, not $border-color: the rule is as dark as the label, and dims
-  // with it, because opacity above applies to the whole button.
-  border-bottom-color: currentColor;
+  /* !important only because .p-0 and .pb-2 in the template are !important.
+     Delete those two utilities from the button and this can lose it too. */
+  padding: 0.7em 1.4em !important;
+  letter-spacing: 0.1em;
+  color: #000;
+  background-color: transparent;
+
+  /* Not border-bottom-color — .border-bottom is an !important utility and wins
+     over any longhand here. It reads --bs-border-color, though, and custom
+     properties are inherited normally, so retargeting the variable is the one
+     way to recolour a Bootstrap border utility without !important. The old
+     `border-bottom-color: currentColor` never applied for this reason: the rule
+     rendered at --bs-border-color's default rgba(0, 0, 0, .15), not at the
+     label colour. */
+  --bs-border-color: #000;
+
+  transition:
+    background-color 0.1s linear,
+    color 0.1s linear;
 
   &:hover,
   &:focus-visible,
   &.active {
-    opacity: 1;
+    background-color: #000;
+    color: #fff;
+  }
+}
+
+/* The reference does not use a flex gap here: each tab is centred inside its own
+   fluid-engine cell, both cells 18.56% of the content width with an 11px gutter
+   between them. So the distance between the two label centres tracks the
+   viewport and does not care how long the labels are. Measured centre-to-centre:
+   240.6px @ 1258vw and 286.3px @ 1498vw, i.e. 0.1856 × content + 11px, which is
+   0.1856vw + 8.2px once the 15px scrollbar is folded in. Subtracting half of
+   each button's width converts that to the equivalent column-gap.
+
+   Three caveats, because a gap is not the same mechanism as a cell:
+     - two-point fit. The browser would not resize past those widths, so nothing
+       confirms it holds at the extremes; 14rem is a guess at where it stops,
+       same as the 3.6rem cap on .preview__title below.
+     - the 141.6px folds in half of (191.6 + 107.9) — these two English labels.
+       The RO strings are a different width, so the tabs sit a few px off centre
+       there, where the reference's cells would not move at all.
+     - below ~1020px the raw fit collapses toward zero, because a 191.6px button
+       no longer fits in an 18.56% cell and the reference must be doing something
+       else there that I could not observe. Hence the 3rem floor.
+   Exact reproduction needs a wrapper element per tab in the template — a gap
+   alone cannot express "centre each label in an equal cell". */
+@media (min-width: 768px) {
+  .nav {
+    column-gap: clamp(3rem, 18.56vw - 141.6px, 14rem) !important; // beats .gap-md-8
   }
 }
 
