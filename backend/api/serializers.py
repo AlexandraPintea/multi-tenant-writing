@@ -11,6 +11,8 @@ class SiteConfigSerializer(serializers.Serializer):
     domain = serializers.CharField()
     name = serializers.CharField()
     logo = serializers.SerializerMethodField()
+    social_links = serializers.JSONField()
+    copyright_text = serializers.CharField(allow_blank=True)
     theme = serializers.SerializerMethodField()
     layout = serializers.SerializerMethodField()
     enabled_languages = serializers.ListField(child=serializers.CharField())

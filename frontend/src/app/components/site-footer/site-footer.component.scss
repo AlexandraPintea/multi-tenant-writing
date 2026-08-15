@@ -1,0 +1,21 @@
+:host {
+  display: block;
+  // Matches the writings page's fluid gutter rather than a Bootstrap container,
+  // so the footer lines up with the content above it at every width.
+  padding-inline: 4vw;
+  padding-block: 3rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+}
+
+.site-footer__links {
+  list-style: none;
+}
+
+@media (max-width: 767px) {
+  :host {
+    padding-inline: 6vw;
+    padding-block: 2.5rem;
+    text-align: center;
+  }
+}
