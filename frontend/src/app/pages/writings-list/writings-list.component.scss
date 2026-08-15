@@ -1,20 +1,150 @@
-.preview {
-  margin-block: 2rem;
-  max-width: 42rem;
+:host {
+  display: block;
+  /* No max-width. The reference is fully fluid — measured maxWidth: none on every
+     ancestor. Horizontal padding is exactly 4% of the viewport (51.24px @ 1281vw,
+     41.6px @ 1039vw), so it keeps growing instead of capping. */
+  padding-inline: 4vw;
+  padding-block: 4rem 6rem;
 }
 
-.preview__meta {
+/* ---------- category tabs ---------- */
+
+.writings__tabs {
   display: flex;
-  gap: 0.75rem;
-  font-size: 0.85rem;
-  opacity: 0.7;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9.5rem;
+  margin-bottom: 6rem;
+}
+
+.writings__tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid currentColor;
+  padding: 0 0 0.65rem;
+  cursor: pointer;
+
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--fg);
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+
+  &:hover,
+  &:focus-visible,
+  &.is-active {
+    opacity: 1;
+  }
+}
+
+/* ---------- post preview ---------- */
+
+.preview {
+  display: grid;
+  /* Both measured as percentages of the content width, not fixed px:
+     image 22% (256/1164 and 207/941), gap 6% (70/1164 and 56/941). */
+  grid-template-columns: 22% 1fr;
+  gap: 6%;
+  align-items: start;
+  margin-bottom: 6rem;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+/* cover_image is nullable — let the text span the full column when it is. */
+.preview--no-cover {
+  grid-template-columns: 1fr;
+}
+
+.preview__media {
+  display: block;
+}
+
+.preview__cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
 }
 
 .preview__category {
-  color: var(--accent);
+  margin: 0 0 1.25rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--fg);
 }
 
-.preview h2 a {
-  color: inherit;
-  text-decoration: none;
+.preview__title {
+  margin: 0 0 19px;
+  font-family: var(--font-display);
+  /* Fitted to three measured points: 35.03px @632, 38.44px @1039, 43.67px @1281.
+     The lower clamp reproduces the mobile size exactly; the 3.6rem cap is my
+     assumption — I could not resize past 1281 to confirm where it stops growing. */
+  font-size: clamp(2.19rem, 1rem + 2.16vw, 3.6rem);
+  font-weight: 300;
+  line-height: 1.3;
+  letter-spacing: 0.07em; /* holds at every width: 2.45/35.03 = 3.06/43.67 = 0.07 */
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+.preview__excerpt {
+  margin: 0 0 2rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--fg);
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.preview__more {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.writings__empty {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ---------- the single breakpoint the reference uses (767/768px) ---------- */
+
+@media (max-width: 767px) {
+  :host {
+    padding-inline: 6vw; /* measured 38px @ 632vw = 6.01% */
+    padding-block: 2.5rem 4rem;
+  }
+
+  .writings__tabs {
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .preview {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
 }
