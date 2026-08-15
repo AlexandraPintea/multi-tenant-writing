@@ -1,0 +1,59 @@
+// Bootstrap, configured to this site's type and palette before it loads.
+//
+// Bootstrap's Reboot is opinionated: left alone it imposes its own system font
+// stack, type scale, link colour and heading weights on every page, which would
+// undo the reference design. Overriding the variables here rather than fighting
+// Reboot with later rules means Bootstrap's own components come out in the
+// site's voice too, not just the elements we remember to restyle.
+//
+// Values mirror the custom properties in styles.scss. They are duplicated as
+// Sass variables because Bootstrap computes with them at build time (shade,
+// tint, contrast-ratio), and var() is opaque to Sass.
+
+$font-family-sans-serif: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+$headings-font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+
+$body-bg: #ffffff;
+$body-color: #000000;
+$border-color: rgba(0, 0, 0, 0.15);
+
+$font-size-base: 1rem;
+$line-height-base: 1.6;
+$headings-font-weight: 300;
+
+// The reference underlines links on hover only, and never recolours them.
+$link-color: $body-color;
+$link-hover-color: $body-color;
+$link-decoration: none;
+$link-hover-decoration: underline;
+
+// 0-5 are Bootstrap's own values. 6, 7 and 8 extend the scale to the rhythm
+// measured off the reference — 4rem and 6rem between sections, and the 9.5rem
+// gap between category tabs — none of which mb-5 (3rem) can express.
+$spacers: (
+  0: 0,
+  1: 0.25rem,
+  2: 0.5rem,
+  3: 1rem,
+  4: 1.5rem,
+  5: 3rem,
+  6: 4rem,
+  7: 6rem,
+  8: 9.5rem,
+);
+
+@forward 'bootstrap/scss/bootstrap' with (
+  $font-family-sans-serif: $font-family-sans-serif,
+  $headings-font-family: $headings-font-family,
+  $body-bg: $body-bg,
+  $body-color: $body-color,
+  $border-color: $border-color,
+  $font-size-base: $font-size-base,
+  $line-height-base: $line-height-base,
+  $headings-font-weight: $headings-font-weight,
+  $link-color: $link-color,
+  $link-hover-color: $link-hover-color,
+  $link-decoration: $link-decoration,
+  $link-hover-decoration: $link-hover-decoration,
+  $spacers: $spacers
+);
