@@ -4,7 +4,9 @@
     "authors": "Authors",
     "about": "About",
     "contact": "Contact",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "menu": "Menu",
+    "close": "Close"
   },
   "home": {
     "recent": "Recent writing",

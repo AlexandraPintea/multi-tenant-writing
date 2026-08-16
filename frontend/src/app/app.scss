@@ -18,6 +18,21 @@
     text-decoration: none;
   }
 
+  &__burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px: the smallest thing a thumb can hit reliably, and the icon inside
+       is only 26px. */
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
   &__nav {
     display: flex;
     align-items: center;
@@ -43,6 +58,50 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+}
+
+/**
+ * The panel, below Bootstrap's md breakpoint.
+ *
+ * Only the states where the offcanvas is actually a panel are styled here —
+ * above md, `.offcanvas-md` neutralises itself and the nav is an ordinary row
+ * again, so none of this applies and the desktop header is untouched.
+ */
+@media (max-width: 767.98px) {
+  .site-header__menu {
+    /* Narrower than Bootstrap's 400px default: this is four links, and a panel
+       that covers the whole page hides the piece the reader was reading. */
+    --bs-offcanvas-width: min(20rem, 80vw);
+
+    background: var(--bg);
+    font-family: var(--font-body);
+  }
+
+  .site-header__menu .offcanvas-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+  }
+
+  .site-header__menu .offcanvas-title {
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .site-header__menu .offcanvas-body {
+    padding: 1.5rem;
+  }
+
+  .site-header__nav {
+    /* Stacked and left-aligned in the panel, with targets far enough apart to
+       tap without aiming. */
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    font-size: 1.125rem;
   }
 }
 

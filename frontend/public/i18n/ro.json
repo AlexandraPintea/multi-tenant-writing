@@ -4,7 +4,9 @@
     "authors": "Autori",
     "about": "Despre",
     "contact": "Contact",
-    "privacy": "Confidențialitate"
+    "privacy": "Confidențialitate",
+    "menu": "Meniu",
+    "close": "Închide"
   },
   "home": {
     "recent": "Texte recente",
