@@ -70,9 +70,10 @@
  */
 @media (max-width: 767.98px) {
   .site-header__menu {
-    /* Narrower than Bootstrap's 400px default: this is four links, and a panel
-       that covers the whole page hides the piece the reader was reading. */
-    --bs-offcanvas-width: min(20rem, 80vw);
+    /* Full width: the menu takes the whole screen rather than sliding a column
+       over part of it. The backdrop is then never visible, so the panel's own
+       background is the only thing between the reader and the page. */
+    --bs-offcanvas-width: 100vw;
 
     background: var(--bg);
     font-family: var(--font-body);
@@ -92,16 +93,22 @@
   }
 
   .site-header__menu .offcanvas-body {
-    padding: 1.5rem;
+    /* Horizontally centred, top-aligned: the links start just below the menu
+       bar rather than floating in the middle of the screen. */
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1.5rem;
   }
 
   .site-header__nav {
-    /* Stacked and left-aligned in the panel, with targets far enough apart to
-       tap without aiming. */
+    /* Stacked and centred, with targets far enough apart to tap without
+       aiming. */
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1.5rem;
-    font-size: 1.125rem;
+    align-items: center;
+    gap: 1.75rem;
+    font-size: 1.25rem;
+    text-align: center;
   }
 }
 
