@@ -15,7 +15,6 @@ describe('CommentListComponent', () => {
       providers: [provideTranslateService({ fallbackLang: 'en', lang: 'en' })],
     });
     const translate = TestBed.inject(TranslateService);
-    translate.setTranslation('en', { comments: { none: 'No comments yet.' } });
     translate.use('en');
 
     fixture = TestBed.createComponent(CommentListComponent);
@@ -34,11 +33,13 @@ describe('CommentListComponent', () => {
     expect(text()).toContain('A remark.');
   });
 
-  it('says so when there are none', async () => {
+  it('renders nothing at all when there are none', async () => {
+    // No empty state: an unread piece should not announce that nobody has
+    // commented on it. The form below still invites one.
     fixture.componentRef.setInput('comments', []);
     await fixture.whenStable();
 
-    expect(text()).toContain('No comments yet.');
+    expect((fixture.nativeElement as HTMLElement).textContent?.trim()).toBe('');
   });
 
   it('renders a comment as text, never as markup', async () => {

@@ -50,7 +50,6 @@
   },
   "comments": {
     "title": "Comentarii",
-    "none": "Niciun comentariu încă.",
     "name": "Nume",
     "body": "Comentariu",
     "nameRequired": "Te rog scrie un nume.",
