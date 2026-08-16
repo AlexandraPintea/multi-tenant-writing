@@ -65,6 +65,10 @@ export interface Page {
   slug: string;
   title: string;
   content: string;
+  /** Root-relative upload path, or null when the page has no photo. */
+  image: string | null;
+  /** Never empty when there is an image: the API falls back to the title. */
+  image_alt: string;
 }
 
 export interface Paginated<T> {

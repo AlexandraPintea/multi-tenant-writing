@@ -2,19 +2,22 @@ import { Component, computed, effect, inject, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Store } from '@ngxs/store';
 
+import { MediaUrlPipe } from '../../core/media-url.pipe';
 import { SeoService } from '../../core/seo';
 import { LoadPage } from '../../stores/content/content.actions';
 import { pageOf, selectContentSlice } from '../../stores/content/content.selectors';
 import { LanguageStore } from '../../stores/language.store';
 
 /**
- * About and Contact. One component for both: they differ only by the slug the
- * route supplies, and their content is admin-editable per site (§3.1), so
- * hard-coding either would put copy in the bundle instead of the database.
+ * The admin-written pages: About and the privacy notice. One component for
+ * all of them — they differ only by the slug the route supplies, and their
+ * content is editable per site (§3.1), so hard-coding any of it would put copy
+ * in the bundle instead of the database. (/contact has its own component, it
+ * being a form rather than prose.)
  */
 @Component({
   selector: 'app-static-page',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, MediaUrlPipe],
   templateUrl: './static-page.component.html',
   styleUrl: './static-page.component.scss',
 })

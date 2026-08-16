@@ -326,10 +326,23 @@ class Page(TranslatableModel):
         related_name="pages",
     )
     slug = models.SlugField(max_length=200)
+    # A photo for the page — an author portrait on About, whatever suits
+    # elsewhere. Optional: a page without one simply renders its text.
+    #
+    # A field rather than an <img> pasted into content: the admin gives you an
+    # upload widget, the file lands in MEDIA_ROOT with everything else, and the
+    # frontend can put it through the mediaUrl pipe. An inline tag in the body
+    # would need a URL the author had to find, and would be a broken box in
+    # development, where /media does not resolve against the dev server.
+    image = models.ImageField(upload_to="pages/", blank=True)
 
     translations = TranslatedFields(
         title=models.CharField(max_length=300),
         content=models.TextField(blank=True),
+        # Translated, because a description of a photo is prose too. Falls back
+        # to the page title when blank — an empty alt on a photo of a person
+        # tells a screen-reader user nothing at all.
+        image_alt=models.CharField(max_length=300, blank=True),
     )
 
     class Meta:

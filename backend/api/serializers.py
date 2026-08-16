@@ -274,9 +274,23 @@ class PageSerializer(_TranslatedMixin, serializers.Serializer):
     slug = serializers.CharField()
     title = serializers.SerializerMethodField()
     content = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    image_alt = serializers.SerializerMethodField()
 
     def get_title(self, obj):
         return self._t(obj, "title", any_language=True)
 
     def get_content(self, obj):
         return self._t(obj, "content", any_language=True)
+
+    def get_image(self, obj):
+        # Root-relative, like every other upload: nginx serves /media from the
+        # same origin in production, and the frontend re-bases it in dev.
+        return obj.image.url if obj.image else None
+
+    def get_image_alt(self, obj):
+        # The title is the fallback, so a photo is never announced as nothing
+        # at all when the author leaves the description blank.
+        return self._t(obj, "image_alt", any_language=True) or self._t(
+            obj, "title", any_language=True
+        )
