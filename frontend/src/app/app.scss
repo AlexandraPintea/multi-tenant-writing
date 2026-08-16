@@ -1,6 +1,11 @@
 .site-header {
+  /* Wordmark left, nav right, the two vertically centred against each other.
+     center rather than baseline: once a site uploads a logo the wordmark is an
+     <img>, and an image sits *on* the text baseline, so the nav rendered level
+     with the bottom edge of the logo instead of its middle. Centring also holds
+     as the logo height changes, which baseline does not. */
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 2rem;
   padding: 1.25rem 2rem;
@@ -15,7 +20,7 @@
 
   &__nav {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 1.25rem;
 
     a {
