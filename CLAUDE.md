@@ -172,6 +172,24 @@ Both earlier open decisions are now settled: the Roam layout key is `grid` (the 
 
 `playwright-report/` and `test-results/` are gitignored on this branch only; until 2.9 merges they show up as untracked noise anywhere else.
 
+## Deployment
+
+Target: **alexandrapintea.eu only**. roamliterary.com stays on Squarespace, so it has no nginx server block and is not in `ALLOWED_HOSTS`; its `Site` row can sit in the database unserved.
+
+`docker-compose.prod.yml` runs three services from `/opt/app` on the VPS, reading `/opt/app/.env` (see the production half of `.env.example`). nginx is **not** in the stack — it runs on the host, terminates TLS, and reaches the containers over loopback. That is why the published ports are written `127.0.0.1:8000:8000` and `127.0.0.1:4000:4000`: bare `8000:8000` would punch through ufw and expose Django to the internet without TLS. Postgres publishes nothing at all.
+
+`./media` and `./staticfiles` are **bind mounts, not named volumes**, because host nginx serves both directly. Both must be owned by **uid 1000** on the host (`sudo chown -R 1000:1000 /opt/app/media /opt/app/staticfiles`) — that is the uid inside the backend image, and without it the first admin upload fails with a permission error.
+
+`ALLOWED_HOSTS` must include **`backend`** alongside the two public names: that is the Host the SSR container sends when it calls the API across the compose network, and Django validates Host before anything else looks at `X-Site-Domain`. Leave it out and every server render gets a 400.
+
+**Log retention is a promise, not a detail.** The privacy notice tells readers their IP addresses are kept "about two weeks". Those addresses are only in nginx's access log on the host, which Ubuntu's logrotate turns over daily and keeps for 14 days — so `/etc/logrotate.d/nginx` saying `rotate 14` is what makes the notice true. Django is behind nginx, so gunicorn logs the proxy's address, not the reader's. Container logs are capped at 30MB per service (`x-logging` in the compose file) because Docker's json-file driver is otherwise unbounded and will eventually fill the disk.
+
+The frontend `depends_on` the backend with `condition: service_started`, deliberately not `service_healthy` — the backend reports unhealthy until a `Site` row exists, so on a fresh database `service_healthy` would keep the frontend down permanently.
+
+**nginx is installed in two phases**, because it refuses to start when a server block names a certificate file that does not exist yet — which would leave certbot with no working nginx to reload. So `deploy/nginx/alexandrapintea.eu.bootstrap.conf` (port 80 and the ACME challenge only) goes first, then `certbot certonly --webroot -w /var/www/certbot`, then `deploy/nginx/alexandrapintea.eu.conf` replaces it. `certonly --webroot` rather than `--nginx` so certbot never rewrites the file that is version-controlled here.
+
+The full config routes `/api/` and `/admin/` to 8000, `/static/` and `/media/` from disk, everything else to 4000, and every `proxy_pass` sets `Host $host` (the tenant is resolved from it) and overwrites `X-Forwarded-Proto` (Django trusts it as proof of TLS). www 301s to the bare domain.
+
 ## Code style
 
 In the backend, use comments sparingly. Only comment complex code where the WHY is non-obvious (hidden constraints, subtle invariants, workarounds). Don't comment what the code already says.
