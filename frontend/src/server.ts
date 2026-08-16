@@ -10,7 +10,25 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+
+/**
+ * trustProxyHeaders is not a nicety here — without it the server refuses to
+ * render at all behind nginx.
+ *
+ * Angular treats an unexpected `X-Forwarded-*` header as a possible spoof: it
+ * logs "Received x-forwarded-for header but trustProxyHeaders was not set up
+ * to allow it" and falls back to serving the bare client shell. The page still
+ * works in a browser, so nothing looks broken — but every request returns
+ * `<app-root></app-root>` with the default title, which is exactly what a
+ * crawler sees, and server-side rendering is the whole reason this process
+ * exists. It cost an hour to find in production.
+ *
+ * Trusting them is correct in this deployment: nginx *sets* those headers on
+ * every proxied request rather than passing a client's through, and it is the
+ * only thing that can reach this port — the container publishes on
+ * 127.0.0.1 only.
+ */
+const angularApp = new AngularNodeAppEngine({ trustProxyHeaders: true });
 
 /**
  * Example Express Rest API endpoints can be defined here.
