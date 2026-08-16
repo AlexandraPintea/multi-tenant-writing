@@ -119,7 +119,9 @@ Note for the first deploy: `/api/site-config/` **500s when no `Site` row matches
 
 ### CI
 
-`.github/workflows/backend-ci.yml` runs on every PR touching `backend/**`: `pip install --require-hashes -r requirements-dev.txt`, then `ruff check .`, `black --check .`, `pytest`. Postgres 16 runs as a service container rather than SQLite, because the suite leans on JSONField lookups, `distinct()` over the parler translations join, and NULL ordering — matching the production engine is the point. There is no frontend workflow yet (playbook 2.10).
+`.github/workflows/backend-ci.yml` runs on every PR touching `backend/**`: `pip install --require-hashes -r requirements-dev.txt`, then `ruff check .`, `black --check .`, `pytest`. Postgres 16 runs as a service container rather than SQLite, because the suite leans on JSONField lookups, `distinct()` over the parler translations join, and NULL ordering — matching the production engine is the point.
+
+`.github/workflows/frontend-ci.yml` mirrors it for `frontend/**`: `npm ci`, `npm run lint`, `npm run test -- --coverage`. Playwright is **not** on that path — it is a separate job on a 3am cron plus `workflow_dispatch`, because a browser install, a build and three containers cost minutes per PR against a suite whose failures are as often timing as regression, and a flaky red teaches people to ignore CI. The e2e job needs no Postgres service container: `docker-compose.e2e.yml` brings its own.
 
 ### Frontend
 
@@ -128,9 +130,13 @@ Note for the first deploy: `/api/site-config/` **500s when no `Site` row matches
 npm start                                   # ng serve on 4200 (dev SSR via Vite)
 npm run build -- --configuration development
 npm run serve:ssr:writing-frontend          # built SSR server on 4000
-npm test                                    # Jest (55 tests) — never `ng test`
-npx playwright test                         # e2e; needs a build + the backend up
+npm test                                    # Jest (110 tests) — never `ng test`
+npm run lint                                # prettier --check + tsc --noEmit
+npm run format                              # prettier --write over the same files
+npm run e2e                                 # Playwright; starts its own backend
 ```
+
+There is no ESLint. `lint` is Prettier plus a type-check, which is what CI enforces. `.prettierrc` sets `endOfLine: "auto"` deliberately: this is a Windows working copy with `autocrlf`, so the default `lf` would fail every file locally while passing in CI.
 
 Scaffolded (playbook 2.1) at `frontend/`: **Angular 21**, standalone throughout, SSR via `src/server.ts`, ngx-translate with `public/i18n/{en,ro}.json`, and `src/styles/_variables.scss` holding fallback theme custom properties. `SiteConfigStore` (`src/app/stores/site-config.store.ts`, playbook 2.2) is an `@ngrx/signals` store that fetches `/api/site-config/` and applies the theme to `document.documentElement` — guarded by `isPlatformBrowser`, since that effect is meaningless during SSR. It resolves the tenant from `window.location.host` in the browser and from the `REQUEST` token's Host header on the server, forwarded as `X-Site-Domain`.
 
@@ -164,9 +170,15 @@ Both earlier open decisions are now settled: the Roam layout key is `grid` (the 
 
 ### Frontend e2e (Playwright)
 
-`frontend/e2e/` (playbook 2.9) holds `smoke`, `deep-link`, `language-toggle` and `monolingual-post` specs, run with `npx playwright test` — there is no npm script. They are e2e rather than unit tests because what they assert only exists once the whole chain is assembled: Django resolving a tenant from the Host header, SSR rendering with that tenant's data, and the HTML arriving complete **before any JavaScript runs**. A unit test can prove a component renders a title; only this proves a crawler that never executes JS sees it.
+`frontend/e2e/` (playbook 2.9) holds `smoke`, `deep-link`, `language-toggle` and `monolingual-post` specs — **19 tests, all passing**. Run them with `npm run e2e`. They are e2e rather than unit tests because what they assert only exists once the whole chain is assembled: Django resolving a tenant from the Host header, SSR rendering with that tenant's data, and the HTML arriving complete **before any JavaScript runs**. A unit test can prove a component renders a title; only this proves a crawler that never executes JS sees it.
 
-**It needs a real build, not `ng serve`.** The `webServer` block starts `node dist/writing-frontend/server/server.mjs`, so run `npm run build -- --configuration development` first; Postgres and `runserver 8001` must already be up (the config lists these prerequisites but cannot start them).
+**The backend is started for you** by `docker-compose.e2e.yml`: a tmpfs Postgres and a Django container seeded with `seed_demo_data`, published on 127.0.0.1:8001. The specs assert on those two demo posts, so pointing the suite at a real database is what made twelve of them "fail" — the fix was the fixture source, not the assertions. It runs as a Playwright `webServer` rather than `globalSetup`, because globalSetup runs *after* the web servers and the SSR server cannot render its first page without an API. `e2e/global-teardown.ts` removes it afterwards.
+
+Port 8001 is also what `manage.py runserver 8001` uses, so **stop your dev server first** — `reuseExistingServer: false` makes Playwright say so rather than quietly testing your own writing. `E2E_SKIP_STACK=1` runs against a backend you started yourself.
+
+**It needs a real build, not `ng serve`**: run `npm run build -- --configuration development` first (the SSR bundle talks to 127.0.0.1:8001, which is baked into `environment.development.ts`).
+
+Two smoke specs lost their layout assertions: they loaded `/` and checked `app-editorial-layout` vs `app-grid-layout`, but the root now redirects to `/writings`, which leaves `SiteHomeComponent` and both layouts **unreachable** (`app.routes.ts` says so too). They check the per-tenant theme on `/writings` instead. If a home route ever returns, bring the layout coverage back with it.
 
 `e2e/tenant-proxy.mjs` stands in for nginx: a browser sets Host from the URL and will not let a test override it, and hosts-file entries need administrator rights a checkout should not require. So port **4101 → `alexandrapintea.eu`** and **4102 → `roamliterary.com`**, each forwarding to the single SSR server on 4000 with the right Host attached — which is exactly nginx's production job (architecture §6.3), making it a faithful stand-in rather than a test-only shortcut.
 

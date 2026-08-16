@@ -1,0 +1,57 @@
+# A backend for the end-to-end suite: throwaway database, demo fixtures, gone
+# again afterwards.
+#
+# Brought up and torn down by frontend/e2e/global-setup.ts, not by hand.
+#
+# The suite used to run against whatever was in the developer's own database,
+# which is why twelve of its specs were failing: they assert on the two demo
+# posts, and a real database has real writing in it instead. Tests that depend
+# on the contents of someone's laptop cannot pass twice, and cannot run in CI
+# at all.
+name: writing-e2e
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: e2e
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e
+    # In memory: nothing here is worth keeping, and a run should not leave a
+    # volume behind for the next one to inherit.
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U e2e -d e2e']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Development settings, deliberately. Production would answer the
+      # suite's plain-HTTP calls with a 301 to https, and its CORS list would
+      # reject the tenant proxy's origins — neither has anything to do with
+      # what these tests are checking.
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      SECRET_KEY: e2e-not-a-secret
+      DATABASE_URL: postgres://e2e:e2e@db:5432/e2e
+      DEFAULT_SITE_DOMAIN: alexandrapintea.eu
+    # The image's entrypoint migrates first, so by the time this runs there are
+    # tables to seed. exec so gunicorn keeps PID 1.
+    command:
+      [
+        'sh',
+        '-c',
+        'python manage.py seed_demo_data && exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2',
+      ]
+    ports:
+      # 8001 because that is what environment.development.ts points the
+      # frontend at. The developer's own runserver uses the same port, so one
+      # of the two has to be stopped — Playwright says so rather than quietly
+      # testing against the wrong data.
+      - '127.0.0.1:8001:8000'
