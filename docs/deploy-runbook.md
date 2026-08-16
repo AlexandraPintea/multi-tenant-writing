@@ -24,10 +24,14 @@ being built. Nobody is watching a clock.
       wherever that zone lives — a Google account, not necessarily Squarespace.
       **Confirm you can log in and edit an A record before starting**, because
       everything from step 4 onward depends on it.
-- [ ] An SSH key. On Windows: `ssh-keygen -t ed25519 -C "alexandra@laptop"`,
-      then the public half is in `C:\Users\<you>\.ssh\id_ed25519.pub`.
-- [ ] A Backblaze B2 account for backups (free tier is plenty). Not needed to
-      go live, but do not leave it long.
+- [ ] An SSH key. If `C:\Users\<you>\.ssh\id_ed25519.pub` already exists, use
+      it — the email comment inside it is only a label and does not need to
+      match anything. Otherwise:
+      `ssh-keygen -t ed25519 -C "alexandra@laptop"`.
+
+Backups are step 10 and are **not** needed to go live. Worth knowing what the
+gap is, though: after launch, anything written in the live admin exists only on
+that server.
 
 Two values to generate now and keep somewhere safe:
 
@@ -44,16 +48,20 @@ and a strong Postgres password (any password manager will make one).
 ## 1. Provision the server
 
 - [ ] Hetzner Cloud → new project → **Add Server**.
-- [ ] Location: **Falkenstein** or **Nuremberg** (Germany) — both are in the EU,
-      which is what the privacy notice tells readers. Helsinki is equally fine;
-      Ashburn and Singapore are **not**, and would make the notice untrue.
-- [ ] Image: **Ubuntu 24.04 LTS**.
-- [ ] Type: **CX22** (2 vCPU, 4GB, 40GB) — sized in the architecture doc, and
-      what the 512MB Node heap cap in `frontend/Dockerfile` assumes.
-- [ ] SSH key: paste your public key. Do **not** enable a root password.
-- [ ] Backups: tick them (20% of server cost). These are Hetzner's snapshots —
-      useful, but not a substitute for step 10's off-site dumps: a snapshot of a
-      corrupted database is a corrupted database.
+- [ ] Location: **Helsinki** (the only one offered on this account). Finland is
+      in the EU, which is what the privacy notice tells readers. A US location
+      would make that notice untrue.
+- [ ] Image: **Ubuntu 26.04 LTS**. The host version barely matters — everything
+      runs in containers.
+- [ ] Type: **CX23**, €7.25/month, the cheapest shared-vCPU plan available
+      here. What matters is **4GB RAM**: Postgres, Django and the Node renderer
+      share it, and the Angular build needs headroom. Avoid the CPX/CCX lines —
+      those are dedicated vCPU and several times the price for no benefit here.
+- [ ] SSH key: paste `C:\Users\<you>\.ssh\id_ed25519.pub`. Do **not** enable a
+      root password.
+- [ ] Backups: skip for now, they add 20%. They are Hetzner's snapshots, and
+      not a substitute for step 10 anyway — a snapshot of a corrupted database
+      is a corrupted database.
 - [ ] Note the IPv4 address. Everything below calls it `<VPS_IP>`.
 
 **Verify.** `ssh root@<VPS_IP>` gets you in without a password prompt.
