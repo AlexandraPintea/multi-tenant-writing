@@ -186,6 +186,8 @@ Two smoke specs lost their layout assertions: they loaded `/` and checked `app-e
 
 ## Deployment
 
+**`docs/deploy-runbook.md` is the step-by-step**: provisioning, hardening, TLS, moving the content across, backups and the cutover. What follows is the design behind it.
+
 Target: **alexandrapintea.eu only**. roamliterary.com stays on Squarespace, so it has no nginx server block and is not in `ALLOWED_HOSTS`; its `Site` row can sit in the database unserved.
 
 `docker-compose.prod.yml` runs three services from `/opt/app` on the VPS, reading `/opt/app/.env` (see the production half of `.env.example`). nginx is **not** in the stack — it runs on the host, terminates TLS, and reaches the containers over loopback. That is why the published ports are written `127.0.0.1:8000:8000` and `127.0.0.1:4000:4000`: bare `8000:8000` would punch through ufw and expose Django to the internet without TLS. Postgres publishes nothing at all.
