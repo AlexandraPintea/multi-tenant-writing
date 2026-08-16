@@ -145,8 +145,14 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 sudo usermod -aG docker deploy
 newgrp docker            # or log out and back in
 
-sudo apt install -y nginx certbot
+sudo apt install -y nginx certbot python3-certbot-nginx
 ```
+
+`python3-certbot-nginx` is here for one file, not for the plugin: it ships
+`options-ssl-nginx.conf`, the cipher and protocol set that
+`deploy/nginx/alexandrapintea.eu.conf` includes. Certificates are still issued
+with `certonly --webroot` in step 8. Leave it out and `nginx -t` fails there on
+a missing include — which is what happened on the real deploy.
 
 **Verify.** `docker run --rm hello-world` works **without sudo**. `nginx -v` and
 `certbot --version` both answer. `curl -I http://<VPS_IP>` returns nginx's
@@ -326,6 +332,15 @@ sudo certbot certonly --webroot -w /var/www/certbot \
 fetch it, leaving the config alone. `--nginx` would edit the file by hand, and
 then what is running and what is in git would be two different things.
 
+Two files the config includes are written by certbot only when its *installer*
+runs, and `certonly` does not run it. Put them where it would have:
+
+```bash
+sudo cp /usr/lib/python3/dist-packages/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf \
+        /etc/letsencrypt/options-ssl-nginx.conf
+sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
+```
+
 ```bash
 cd /opt/app
 sudo cp deploy/nginx/alexandrapintea.eu.conf \
@@ -451,3 +466,5 @@ this repository plus `/opt/app/.env` and a database dump in minutes.
 | Pages render but images 404 | `/opt/app/media` ownership, or the `/media/` location in nginx |
 | Admin loads unstyled | `collectstatic` did not run, or `/opt/app/staticfiles` is unreadable |
 | Certbot refuses to issue | DNS has not propagated yet, or port 80 is closed in ufw |
+| `nginx -t` fails on a missing include | `options-ssl-nginx.conf` or `ssl-dhparams.pem` — see step 8 |
+| Looks right in a browser, but view-source shows an empty `<app-root>` | SSR fell back to the client shell. `docker compose logs frontend` will be repeating a `trustProxyHeaders` warning |
