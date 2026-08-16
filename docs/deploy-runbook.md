@@ -5,26 +5,29 @@ already built — production settings, both images, `docker-compose.prod.yml`,
 the two nginx configs. What is left is a server, and this is the order to do it
 in.
 
-**Scope.** alexandrapintea.eu only. roamliterary.com stays on Squarespace: it
-has no nginx server block and is not in `ALLOWED_HOSTS`, so nothing here touches
-it.
+**Scope.** alexandrapintea.eu only. roamliterary.com stays where it is: it has
+no nginx server block and is not in `ALLOWED_HOSTS`, so nothing here touches it.
 
-**The shape of it.** Steps 1–6 are reversible and invisible to readers — the
-site is built and tested on the new server while Squarespace keeps serving.
-Step 7 is the cutover. Do 1–6 unhurried, on any evening; do 7 when you have an
-hour and nothing else on.
+**Assumed.** The Squarespace site is going away and is not coming back, the
+domain registration is safe and separate from it, and a day or two of downtime
+is acceptable. That is what lets this be a straight line: the domain is pointed
+at the new box early, on purpose, so DNS propagates while the rest is still
+being built. Nobody is watching a clock.
 
 ---
 
 ## 0. Before you start
 
 - [ ] A Hetzner Cloud account.
-- [ ] Access to the DNS records for alexandrapintea.eu at your registrar.
+- [ ] Access to the DNS panel for alexandrapintea.eu. The nameservers are
+      Google's (`ns-cloud-e1..e4.googledomains.com`), so the records are edited
+      wherever that zone lives — a Google account, not necessarily Squarespace.
+      **Confirm you can log in and edit an A record before starting**, because
+      everything from step 4 onward depends on it.
 - [ ] An SSH key. On Windows: `ssh-keygen -t ed25519 -C "alexandra@laptop"`,
       then the public half is in `C:\Users\<you>\.ssh\id_ed25519.pub`.
-- [ ] A Backblaze B2 account for backups (free tier is plenty). Optional for
-      launch, but do not leave it long.
-- [ ] Roughly an hour for steps 1–6, and a separate quiet hour for step 7.
+- [ ] A Backblaze B2 account for backups (free tier is plenty). Not needed to
+      go live, but do not leave it long.
 
 Two values to generate now and keep somewhere safe:
 
@@ -49,7 +52,7 @@ and a strong Postgres password (any password manager will make one).
       what the 512MB Node heap cap in `frontend/Dockerfile` assumes.
 - [ ] SSH key: paste your public key. Do **not** enable a root password.
 - [ ] Backups: tick them (20% of server cost). These are Hetzner's snapshots —
-      useful, but not a substitute for step 9's off-site dumps: a snapshot of a
+      useful, but not a substitute for step 10's off-site dumps: a snapshot of a
       corrupted database is a corrupted database.
 - [ ] Note the IPv4 address. Everything below calls it `<VPS_IP>`.
 
@@ -134,7 +137,7 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 sudo usermod -aG docker deploy
 newgrp docker            # or log out and back in
 
-sudo apt install -y nginx certbot python3-certbot-nginx
+sudo apt install -y nginx certbot
 ```
 
 **Verify.** `docker run --rm hello-world` works **without sudo**. `nginx -v` and
@@ -143,18 +146,52 @@ default page.
 
 ---
 
-## 4. The code and the environment file
+## 4. Point the domain at the box
+
+Early on purpose. DNS takes time to spread, and certbot cannot issue a
+certificate until the name resolves here — so start it now and let it settle
+while you build the rest. The site is briefly unreachable, which is fine.
+
+First give nginx something to answer with. The bootstrap config serves port 80
+and the ACME challenge and nothing else; the full config cannot go first,
+because nginx refuses to start naming a certificate that does not exist yet.
 
 ```bash
-sudo mkdir -p /opt/app
+sudo mkdir -p /var/www/certbot /opt/app
 sudo chown deploy:deploy /opt/app
 git clone https://github.com/AlexandraPintea/multi-tenant-writing.git /opt/app
 cd /opt/app
 
-# The directories nginx serves from, owned by the uid inside the backend image
-mkdir -p media staticfiles
-sudo chown -R 1000:1000 media staticfiles
+sudo cp deploy/nginx/alexandrapintea.eu.bootstrap.conf \
+        /etc/nginx/sites-available/alexandrapintea.eu.conf
+sudo ln -sf /etc/nginx/sites-available/alexandrapintea.eu.conf \
+            /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
 ```
+
+- [ ] In the DNS panel, **replace** the four Squarespace A records on the apex
+      (`198.185.159.144/145`, `198.49.23.144/145`) with a single A record →
+      `<VPS_IP>`.
+- [ ] Do the same for `www` — if it is currently a CNAME to Squarespace, delete
+      it and add an A record to `<VPS_IP>` instead.
+- [ ] Leave every other record alone. In particular, **do not touch MX or TXT
+      records** if any exist: those are mail and domain verification, and this
+      deploy has nothing to do with either.
+
+**Verify**, repeating every few minutes until it agrees:
+
+```bash
+dig +short alexandrapintea.eu @1.1.1.1
+dig +short www.alexandrapintea.eu @8.8.8.8
+```
+
+Both should print `<VPS_IP>`. Until they do, the rest still works — only step 8
+has to wait.
+
+---
+
+## 5. The environment file
 
 Write `/opt/app/.env` (`nano .env`), using the production half of
 `.env.example` as the guide:
@@ -171,6 +208,14 @@ POSTGRES_PASSWORD=<the strong one>
 ```
 
 - [ ] `chmod 600 .env` — it holds the database password.
+- [ ] Create the directories nginx serves from, owned by the uid inside the
+      backend image:
+
+```bash
+cd /opt/app
+mkdir -p media staticfiles
+sudo chown -R 1000:1000 media staticfiles
+```
 
 Three things here bite if they are wrong:
 
@@ -185,9 +230,7 @@ Three things here bite if they are wrong:
 
 ---
 
-## 5. Bring the stack up — before DNS
-
-Squarespace is still serving the domain. Nothing here is visible to anyone.
+## 6. Bring the stack up
 
 ```bash
 cd /opt/app
@@ -200,12 +243,10 @@ docker compose -f docker-compose.prod.yml logs -f         # watch for ~30s, then
 not include the IP:
 
 ```bash
-# The API. Expect 200 once step 6 has put a Site row in.
 curl -s -o /dev/null -w '%{http_code}\n' \
   -H 'Host: alexandrapintea.eu' -H 'X-Forwarded-Proto: https' \
   http://127.0.0.1:8000/api/site-config/
 
-# The SSR server. Expect HTML.
 curl -s -H 'Host: alexandrapintea.eu' http://127.0.0.1:4000/writings | head -40
 ```
 
@@ -213,13 +254,13 @@ curl -s -H 'Host: alexandrapintea.eu' http://127.0.0.1:4000/writings | head -40
 
 > **Expect the backend to be `unhealthy` right now.** The database is empty, so
 > no `Site` row matches, and `/api/site-config/` answers 500 rather than
-> anything useful. It recovers by itself on the next probe once step 6 is done.
+> anything useful. It recovers by itself on the next probe once step 7 is done.
 > The frontend depends on the backend having *started*, not being healthy,
 > precisely so this state does not block it.
 
 ---
 
-## 6. Move your content in
+## 7. Move your content in
 
 Your posts, pages, the author photo, the logo and the theme live only in the
 laptop's database and in `backend/media/`, which is gitignored. Nothing in a
@@ -244,12 +285,8 @@ sudo chown -R 1000:1000 media
 
 # Restart so Django picks up a database that now has content
 docker compose -f docker-compose.prod.yml restart backend
-```
 
-- [ ] Create your admin account on the server — the dump carries the users
-      table, so your laptop login may work, but set a fresh password regardless:
-
-```bash
+# Your own admin account, with a fresh password
 docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
 ```
 
@@ -261,55 +298,15 @@ docker compose -f docker-compose.prod.yml exec backend python manage.py createsu
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: alexandrapintea.eu' \
   -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/api/site-config/   # 200
-curl -s -H 'Host: alexandrapintea.eu' http://127.0.0.1:4000/writings | grep -c 'writings/'
 docker inspect --format '{{.State.Health.Status}}' writing-backend-1     # healthy
 ```
 
 ---
 
-## 7. DNS and TLS — the cutover
+## 8. The certificate, and the real nginx config
 
-This is the irreversible one. Everything before it was private; from here
-readers arrive.
-
-**24 hours ahead:** at your registrar, lower the TTL on alexandrapintea.eu's A
-records to **300 seconds**. That is what makes the switch — and any rollback —
-take minutes instead of a day.
-
-Then, in one sitting:
-
-- [ ] Install the bootstrap nginx config. It serves port 80 and the ACME
-      challenge, and nothing else. The full config cannot go first: nginx
-      refuses to start naming a certificate that does not exist yet, and then
-      certbot has no working nginx to reload.
-
-```bash
-cd /opt/app
-sudo mkdir -p /var/www/certbot
-sudo cp deploy/nginx/alexandrapintea.eu.bootstrap.conf \
-        /etc/nginx/sites-available/alexandrapintea.eu.conf
-sudo ln -sf /etc/nginx/sites-available/alexandrapintea.eu.conf \
-            /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-- [ ] **Switch the A records** at the registrar to `<VPS_IP>`: apex
-      (`alexandrapintea.eu`) and `www`. If Hetzner gave you IPv6 and you want
-      it, add AAAA records too — the nginx config already listens on `[::]`.
-
-- [ ] Watch propagation: `dig +short alexandrapintea.eu @1.1.1.1` and
-      `@8.8.8.8` until both return `<VPS_IP>`.
-
-> **There is a short visible gap here**, and it is worth knowing rather than
-> being surprised by. Between DNS moving and the certificate existing, anyone
-> whose resolver has caught up sees the bootstrap page's plain "waiting for the
-> certificate" over http. Minutes, if you run the next command immediately.
-> Doing this at a quiet hour is the whole mitigation. (Avoiding it entirely
-> means a DNS-01 challenge, which needs registrar API support and is not worth
-> arranging for one domain.)
-
-- [ ] Get the certificate:
+Needs step 4 to have propagated: Let's Encrypt fetches a file over http from
+whatever `alexandrapintea.eu` resolves to, so the name must already point here.
 
 ```bash
 sudo certbot certonly --webroot -w /var/www/certbot \
@@ -321,26 +318,21 @@ sudo certbot certonly --webroot -w /var/www/certbot \
 fetch it, leaving the config alone. `--nginx` would edit the file by hand, and
 then what is running and what is in git would be two different things.
 
-- [ ] Install the real config:
-
 ```bash
+cd /opt/app
 sudo cp deploy/nginx/alexandrapintea.eu.conf \
         /etc/nginx/sites-available/alexandrapintea.eu.conf
 sudo nginx -t && sudo systemctl reload nginx
-```
 
-- [ ] Confirm renewal is armed. It runs on a systemd timer, and it renews
-      through the same webroot — which is why the port-80 block keeps its
-      acme-challenge location:
-
-```bash
+# Renewal runs on a timer, through the same webroot — which is why the
+# port-80 block keeps its acme-challenge location.
 sudo certbot renew --dry-run
 systemctl list-timers | grep certbot
 ```
 
 ---
 
-## 8. Verify from the outside
+## 9. Verify from the outside
 
 From your laptop, not the server:
 
@@ -353,7 +345,7 @@ From your laptop, not the server:
 - [ ] `/about` — the author photo appears.
 - [ ] `/privacy` — the notice, with no `[ADD` or `[CONFIRM` anywhere.
 - [ ] `/admin/` — **styled**, not bare HTML (that is `/static/`), and you can
-      log in with the superuser from step 6.
+      log in with the superuser from step 7.
 - [ ] Post a comment as a reader. It should not appear. Approve it in the
       admin. It should appear.
 - [ ] Send the contact form. The message is in the admin.
@@ -366,9 +358,11 @@ is up and the container behind it is not.
 
 ---
 
-## 9. Backups, and proving they work
+## 10. Backups, and proving they work
 
-A backup you have never restored is a hope, not a backup.
+A backup you have never restored is a hope, not a backup. This is the step it
+is most tempting to skip now that the site is up, and the only one whose
+absence is discovered at the worst possible moment.
 
 ```bash
 sudo mkdir -p /opt/backups /var/backups/pg
@@ -396,6 +390,8 @@ application key scoped **write-only to one bucket**):
 # /opt/backups/sync.sh
 rclone sync /var/backups/pg b2:alexandrapintea-backups/pg \
   --backup-dir b2:alexandrapintea-backups/pg-trash/$(date +%F)
+# Media too — the database dump does not contain your images
+rclone sync /opt/app/media b2:alexandrapintea-backups/media
 ```
 
 - [ ] `chmod +x /opt/backups/*.sh`, then `crontab -e`:
@@ -404,42 +400,22 @@ rclone sync /var/backups/pg b2:alexandrapintea-backups/pg \
 30 3 * * * /opt/backups/pg_dump.sh && /opt/backups/sync.sh
 ```
 
-- [ ] Also back up **media** — the database dump does not contain your images:
-      add `rclone sync /opt/app/media b2:alexandrapintea-backups/media` to the
-      same script.
-
-- [ ] **Restore drill, done once, now.** On the laptop: download the newest
-      dump from B2, load it into a throwaway Postgres container, and confirm
-      your posts are in it. Write down how long it took — that number is your
-      real recovery time.
+- [ ] **Restore drill, done once.** On the laptop: download the newest dump
+      from B2, load it into a throwaway Postgres container, and confirm your
+      posts are in it. Write down how long it took — that number is your real
+      recovery time.
 
 ---
 
-## 10. The 48 hours after
+## 11. Afterwards
 
 - [ ] Watch `sudo tail -f /var/log/nginx/alexandrapintea.access.log` now and
-      then, for 5xx.
-- [ ] Keep Squarespace **paid**. Pointing the A records back at it is the whole
-      rollback plan, and it only works while the site is still there.
+      then for the first day, for 5xx.
 - [ ] After a clean week, raise `SECURE_HSTS_SECONDS` to `31536000` in
-      `/opt/app/.env` and `docker compose -f docker-compose.prod.yml up -d
-      backend`.
-- [ ] Then, and only then, cancel Squarespace for alexandrapintea.eu.
-      roamliterary.com stays.
+      `/opt/app/.env`, then
+      `docker compose -f docker-compose.prod.yml up -d backend`.
 
----
-
-## Rollback
-
-At any point in step 7 or 8: point the A records back at Squarespace. With a
-300-second TTL, readers are back on the old site within minutes. The VPS keeps
-running with your content on it, and you can try again another evening.
-
----
-
-## Redeploying later
-
-Once it is live, a new version is:
+Redeploying a new version, from then on:
 
 ```bash
 cd /opt/app
@@ -450,3 +426,20 @@ docker compose -f docker-compose.prod.yml up -d --build
 The entrypoint migrates, creates the cache table and collects static on every
 start, so there is nothing else to remember. Watch the logs for thirty seconds
 afterwards.
+
+---
+
+## If it goes wrong
+
+There is no going back to Squarespace, so the recovery path is forward: the
+containers are the only thing serving the site, and they can be rebuilt from
+this repository plus `/opt/app/.env` and a database dump in minutes.
+
+| Symptom | Look at |
+| --- | --- |
+| 502 from nginx | The container is down: `docker compose -f docker-compose.prod.yml ps`, then `logs backend` |
+| 400 on every page | `ALLOWED_HOSTS` — most likely missing `backend` |
+| Admin login fails with a CSRF error | `CSRF_TRUSTED_ORIGINS` missing the `https://` scheme |
+| Pages render but images 404 | `/opt/app/media` ownership, or the `/media/` location in nginx |
+| Admin loads unstyled | `collectstatic` did not run, or `/opt/app/staticfiles` is unreadable |
+| Certbot refuses to issue | DNS has not propagated yet, or port 80 is closed in ufw |
