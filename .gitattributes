@@ -1,0 +1,6 @@
+# Shell scripts must keep LF endings. This is a Windows working copy with
+# autocrlf on, and a CRLF entrypoint fails inside the Linux container with
+# "/bin/sh^M: bad interpreter" — a confusing error for a file that looks fine
+# in an editor.
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf

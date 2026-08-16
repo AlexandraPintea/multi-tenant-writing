@@ -103,6 +103,20 @@ python -m black .
 
 **Dependencies.** Direct dependencies live in `backend/pyproject.toml`, pinned with `~=` (patches float, minors don't) except `ruff` and `black`, which are pinned exactly because a new release changes what "correct" means and would fail CI on untouched code. `requirements.txt` (runtime) and `requirements-dev.txt` (runtime + dev) are **generated lock files** with hashes — CI and the future Docker image install from those, never from `pyproject.toml`. After changing a dependency, regenerate both with the `docker run` command recorded in `pyproject.toml`: they must be compiled **inside Linux**, because `pip-compile` resolves for the platform it runs on and emits no environment markers, so a Windows-generated lock silently pins `tzdata`/`colorama` and would omit any Linux-only dependency.
 
+### Backend image
+
+```powershell
+docker build -t writing-backend ./backend
+```
+
+Multi-stage; the runtime carries the packages but not pip's build machinery, and installs with `--require-hashes` so a re-uploaded PyPI release fails the build instead of shipping. Runs as uid **1000** (`app`) — the host directories bind-mounted over `/app/media` and `/app/staticfiles` must be chowned to that uid or the first upload fails with a permission error. `DJANGO_SETTINGS_MODULE=config.settings.production` is baked in, because `manage.py` only *setdefaults* it and running `local.py` on the server would mean DEBUG on and every Host accepted.
+
+`docker-entrypoint.sh` runs `migrate`, `createcachetable` and `collectstatic`, then `exec`s gunicorn so it is PID 1 and gets SIGTERM directly. It deliberately does **not** run `seed_groups` (which resets two staff accounts to a password committed to this repo) or `seed_demo_data`.
+
+`docker-healthcheck.py` sends the first entry of `ALLOWED_HOSTS` as its Host header and `X-Forwarded-Proto: https`. Both are load-bearing: `localhost` is not an allowed host in production (400 forever), and `SECURE_SSL_REDIRECT` answers plain HTTP with a 301.
+
+Note for the first deploy: `/api/site-config/` **500s when no `Site` row matches** — `request.site` is None and the serializer walks into it. An empty database therefore reports unhealthy until the content is restored.
+
 ### CI
 
 `.github/workflows/backend-ci.yml` runs on every PR touching `backend/**`: `pip install --require-hashes -r requirements-dev.txt`, then `ruff check .`, `black --check .`, `pytest`. Postgres 16 runs as a service container rather than SQLite, because the suite leans on JSONField lookups, `distinct()` over the parler translations join, and NULL ordering — matching the production engine is the point. There is no frontend workflow yet (playbook 2.10).
