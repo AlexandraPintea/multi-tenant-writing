@@ -1,6 +1,21 @@
 @if (page(); as loaded) {
   <article>
     <h1>{{ loaded.title }}</h1>
+
+    @if (loaded.image) {
+      <!--
+        Through the mediaUrl pipe, like every other upload: Django serialises
+        /media paths root-relative, which resolve against the frontend origin
+        and 404 in development.
+      -->
+      <img
+        class="page-image"
+        [src]="loaded.image | mediaUrl"
+        [alt]="loaded.image_alt"
+        loading="lazy"
+        decoding="async"
+      />
+    }
     <!--
       Sanitized HTML, like a post body: Django cleans page content against the
       same allowlist on save (content/sanitize.py), and Angular sanitizes this
