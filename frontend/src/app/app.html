@@ -10,20 +10,97 @@
     }
   </a>
 
-  <nav class="site-header__nav">
-    <a routerLink="/writings" routerLinkActive="is-active">{{ 'nav.writings' | translate }}</a>
-    <!-- Roam is a collective, so its authors are navigation. The personal site's
-         top nav is Writings / About / Contact (requirements §3.4). -->
-    @if (showAuthors()) {
-      <a routerLink="/authors" routerLinkActive="is-active">{{ 'nav.authors' | translate }}</a>
-    }
-    <a routerLink="/about" routerLinkActive="is-active">{{ 'nav.about' | translate }}</a>
-    <a routerLink="/contact" routerLinkActive="is-active">{{ 'nav.contact' | translate }}</a>
+  <!--
+    Bootstrap's responsive offcanvas: one set of links that renders inline on a
+    wide screen and slides in over the page on a narrow one. `.offcanvas-md`
+    does the switching, so there is no second copy of the nav to keep in step.
 
-    <!-- Renders nothing on a single-language site, and decides for itself when
-         a language is unavailable for what is on screen. -->
-    <app-language-toggle />
-  </nav>
+    It runs on data-bs-* attributes and the bundle loaded in angular.json, which
+    is browser-only — nothing here executes during a server render, and the
+    markup is inert until the bundle arrives.
+  -->
+  <button
+    class="site-header__burger d-md-none"
+    type="button"
+    data-bs-toggle="offcanvas"
+    data-bs-target="#site-menu"
+    aria-controls="site-menu"
+    [attr.aria-label]="'nav.menu' | translate"
+  >
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false">
+      <path
+        d="M3 6h18M3 12h18M3 18h18"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+
+  <div
+    class="site-header__menu offcanvas-md offcanvas-end"
+    tabindex="-1"
+    id="site-menu"
+    [attr.aria-label]="'nav.menu' | translate"
+  >
+    <div class="offcanvas-header">
+      <span class="offcanvas-title">{{ 'nav.menu' | translate }}</span>
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="offcanvas"
+        data-bs-target="#site-menu"
+        [attr.aria-label]="'nav.close' | translate"
+      ></button>
+    </div>
+
+    <div class="offcanvas-body">
+      <!--
+        Each link dismisses the panel. Bootstrap has no idea the router
+        navigated, so without this the reader taps a link, the page changes
+        underneath, and the menu stays open over the top of it.
+      -->
+      <nav class="site-header__nav">
+        <a
+          routerLink="/writings"
+          routerLinkActive="is-active"
+          data-bs-dismiss="offcanvas"
+          data-bs-target="#site-menu"
+          >{{ 'nav.writings' | translate }}</a
+        >
+        <!-- Roam is a collective, so its authors are navigation. The personal site's
+             top nav is Writings / About / Contact (requirements §3.4). -->
+        @if (showAuthors()) {
+          <a
+            routerLink="/authors"
+            routerLinkActive="is-active"
+            data-bs-dismiss="offcanvas"
+            data-bs-target="#site-menu"
+            >{{ 'nav.authors' | translate }}</a
+          >
+        }
+        <a
+          routerLink="/about"
+          routerLinkActive="is-active"
+          data-bs-dismiss="offcanvas"
+          data-bs-target="#site-menu"
+          >{{ 'nav.about' | translate }}</a
+        >
+        <a
+          routerLink="/contact"
+          routerLinkActive="is-active"
+          data-bs-dismiss="offcanvas"
+          data-bs-target="#site-menu"
+          >{{ 'nav.contact' | translate }}</a
+        >
+
+        <!-- Renders nothing on a single-language site, and decides for itself when
+             a language is unavailable for what is on screen. -->
+        <app-language-toggle />
+      </nav>
+    </div>
+  </div>
 </header>
 
 <main class="site-main">
