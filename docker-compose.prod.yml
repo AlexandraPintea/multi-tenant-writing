@@ -7,12 +7,31 @@
 # 127.0.0.1 — without the prefix Docker would punch a hole in ufw and publish
 # them on the public interface, where the API would be reachable without TLS
 # and the admin without a certificate.
+#
+# Every service caps its logs. Docker's json-file driver is unbounded by
+# default, so on a box with 40GB of disk a chatty container is a slow outage.
+# Size-based, because that is all the driver offers: 30MB per service, oldest
+# chunk dropped first.
+#
+# Worth being precise about what that does and does not cover, because the
+# privacy notice makes a claim about log retention. The reader IP addresses live
+# in nginx's access log on the host, which Ubuntu's logrotate turns over daily
+# and keeps for 14 days — that is the "about two weeks" the notice describes.
+# Django sits behind nginx, so gunicorn's access log records the proxy's address
+# rather than the reader's, and holds no personal data to retain.
 name: writing
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
 
 services:
   db:
     image: postgres:16
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -30,6 +49,7 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
+    logging: *logging
     depends_on:
       db:
         condition: service_healthy
@@ -52,6 +72,7 @@ services:
   frontend:
     build: ./frontend
     restart: unless-stopped
+    logging: *logging
     depends_on:
       # Started, not healthy. The backend reports unhealthy until a Site row
       # exists, so on a brand-new database service_healthy would keep the

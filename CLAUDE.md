@@ -182,6 +182,8 @@ Target: **alexandrapintea.eu only**. roamliterary.com stays on Squarespace, so i
 
 `ALLOWED_HOSTS` must include **`backend`** alongside the two public names: that is the Host the SSR container sends when it calls the API across the compose network, and Django validates Host before anything else looks at `X-Site-Domain`. Leave it out and every server render gets a 400.
 
+**Log retention is a promise, not a detail.** The privacy notice tells readers their IP addresses are kept "about two weeks". Those addresses are only in nginx's access log on the host, which Ubuntu's logrotate turns over daily and keeps for 14 days — so `/etc/logrotate.d/nginx` saying `rotate 14` is what makes the notice true. Django is behind nginx, so gunicorn logs the proxy's address, not the reader's. Container logs are capped at 30MB per service (`x-logging` in the compose file) because Docker's json-file driver is otherwise unbounded and will eventually fill the disk.
+
 The frontend `depends_on` the backend with `condition: service_started`, deliberately not `service_healthy` — the backend reports unhealthy until a `Site` row exists, so on a fresh database `service_healthy` would keep the frontend down permanently.
 
 **nginx is installed in two phases**, because it refuses to start when a server block names a certificate file that does not exist yet — which would leave certbot with no working nginx to reload. So `deploy/nginx/alexandrapintea.eu.bootstrap.conf` (port 80 and the ACME challenge only) goes first, then `certbot certonly --webroot -w /var/www/certbot`, then `deploy/nginx/alexandrapintea.eu.conf` replaces it. `certonly --webroot` rather than `--nginx` so certbot never rewrites the file that is version-controlled here.
