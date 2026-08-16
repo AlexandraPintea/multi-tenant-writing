@@ -54,24 +54,46 @@ describe('PostDetailComponent', () => {
 
   afterEach(() => http.verify());
 
-  it('renders the post once it is loaded', async () => {
+  function flushPost(body: string): void {
     TestBed.inject(Store).dispatch(new LoadPostDetail('the-power-of-words', 'en'));
     http.expectOne(`${environment.API_BASE_URL}/posts/the-power-of-words/?lang=en`).flush({
       slug: 'the-power-of-words',
       title: 'The Power of Words',
       excerpt: 'An exploration.',
-      body: 'Words shape worlds.',
+      body,
       published_at: '2026-05-22T00:00:00Z',
       cover_image: null,
       author: { name: 'Alexandra Pintea', slug: 'alexandra-pintea' },
       category: { slug: 'essay', name: 'Essay' },
       available_languages: ['en', 'ro'],
     });
+  }
+
+  it('renders the post once it is loaded', async () => {
+    flushPost('<p>Words shape worlds.</p>');
     await fixture.whenStable();
 
     expect(text()).toContain('The Power of Words');
-    expect(text()).toContain('Words shape worlds.');
     expect(text()).toContain('Essay');
+    // Structural, not just textual: the body is markup now, so a real <p>
+    // element is the thing under test. textContent alone would pass just as
+    // happily if the tags were being escaped onto the page.
+    const paragraph = (fixture.nativeElement as HTMLElement).querySelector('.body p');
+    expect(paragraph?.textContent).toContain('Words shape worlds.');
+  });
+
+  it('renders the author’s markup, and still sanitizes it', async () => {
+    // The two layers, asserted together. Django cleans this on save, so what
+    // arrives here is already safe — but the binding is sanitized again on
+    // every render, and that second layer is what still stands if a row was
+    // written before the sanitizer existed, or by raw SQL.
+    flushPost('<div class="center">10</div><script>alert(1)</script><p>after</p>');
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.body .center')?.textContent).toBe('10');
+    expect(compiled.querySelector('.body script')).toBeNull();
+    expect(text()).not.toContain('alert(1)');
   });
 
   it('shows the fallback when the post exists but not in this language', async () => {

@@ -1,18 +1,38 @@
 @if (post(); as loaded) {
   <article>
-    <p class="meta">
+    <!--
+      Title first, category under it. The old order (meta line, then title) read
+      like a news item; the reference reads like a book page, where the piece
+      announces itself before anything administrative does. Date and author move
+      to the footer for the same reason — they matter after the read, not before.
+    -->
+    <header class="head">
+      <h1 class="title">{{ loaded.title }}</h1>
       @if (loaded.category) {
-        <span class="meta__category">{{ loaded.category.name }}</span>
+        <p class="category">{{ loaded.category.name }}</p>
       }
+    </header>
+
+    <!--
+      The body is markup the author wrote, not prose to be guessed at. Django
+      sanitizes it against an allowlist on every save (content/sanitize.py), so
+      the stored value is already safe; Angular sanitizes this binding again on
+      every render, which is the second layer and the reason
+      bypassSecurityTrustHtml must never appear here.
+    -->
+    <div class="body" [innerHTML]="loaded.body"></div>
+
+    <footer class="signature">
       <time [attr.datetime]="loaded.published_at">
         {{ loaded.published_at | date: 'longDate' }}
       </time>
       @if (loaded.author) {
         <span>{{ loaded.author.name }}</span>
       }
-    </p>
-    <h1>{{ loaded.title }}</h1>
-    <div class="body">{{ loaded.body }}</div>
+      <a class="signature__back" [routerLink]="['/writings']">
+        ← {{ 'writings.title' | translate }}
+      </a>
+    </footer>
   </article>
 } @else if (notInLanguage()) {
   <section class="unavailable">
@@ -22,5 +42,5 @@
     <a [routerLink]="['/writings']">{{ 'writings.title' | translate }} →</a>
   </section>
 } @else {
-  <p>{{ 'common.notFound' | translate }}</p>
+  <p class="missing">{{ 'common.notFound' | translate }}</p>
 }

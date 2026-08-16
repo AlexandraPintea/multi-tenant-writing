@@ -1,6 +1,10 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from parler.models import TranslatableModel, TranslatedFields
+
+from .sanitize import clean_body
 
 
 class Category(TranslatableModel):
@@ -149,6 +153,29 @@ class Post(TranslatableModel):
             if author.site_id == site.id:
                 return author
         return None
+
+
+# Parler keeps translated fields on a sibling model, so the hook belongs there:
+# saving a Post writes its translations through this model, and so does
+# `post.body = ...; post.save()`, the seeder, the admin and the test fixtures.
+PostTranslation = Post._parler_meta.root_model
+
+
+@receiver(pre_save, sender=PostTranslation)
+def _sanitize_post_body(sender, instance, raw=False, **kwargs):
+    """Clean the body on every write, not just the ones through the admin form.
+
+    A form's clean_body() would be the obvious home and would be wrong: it only
+    ever sees the one language tab being edited, and it would leave the seeder,
+    `manage.py shell` and data migrations writing raw HTML into the same column
+    the API serves. "What is stored is safe" has to be a property of the column,
+    not of one code path.
+
+    `raw` is loaddata replaying a fixture verbatim — rewriting rows mid-load
+    would leave the fixture and the database disagreeing about their contents.
+    """
+    if not raw:
+        instance.body = clean_body(instance.body)
 
 
 class Page(TranslatableModel):

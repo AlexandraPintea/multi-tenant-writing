@@ -1,19 +1,211 @@
+/**
+ * The reading page.
+ *
+ * Measurements taken from alexandrapintea.eu/writings/postid: title in
+ * Montserrat 300 at ~57px with 0.07em tracking, centered; category centred
+ * beneath it; body in Poppins 16/1.6 with 1rem between paragraphs. Everything
+ * here is that page, expressed in the tokens this app already ships (--accent,
+ * --fg, --muted) so a theme change still reaches it.
+ */
+
+:host {
+  display: block;
+}
+
 article {
-  max-width: 42rem;
+  /**
+   * The reference sets its column at 1314px, which is a Squarespace default
+   * rather than a decision — at 16px that is close to 200 characters a line and
+   * the eye loses its place on the way back. 46rem keeps the same centred,
+   * airy shape at a measure that can actually be read. One knob if you disagree:
+   * 82rem matches the reference exactly.
+   */
+  --measure: 46rem;
+
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 4vw, 3.5rem);
 }
 
-.meta {
-  display: flex;
-  gap: 0.75rem;
-  font-size: 0.85rem;
-  opacity: 0.7;
+/* ---------- head ---------- */
+
+.head {
+  text-align: center;
 }
 
-.meta__category {
+.title {
+  margin: 0;
+  /* 36px on a phone, 57.6px on a desktop — the reference's size at both ends. */
+  font-size: clamp(2.25rem, 1.2rem + 3.4vw, 3.6rem);
+  font-weight: 300;
+  line-height: 1.3;
+  letter-spacing: 0.07em;
+  /* Tracking pushes the last glyph's side bearing into the centring maths, so a
+     centered line sits ~0.035em left of true centre. Given back on the indent. */
+  text-indent: 0.07em;
+  text-wrap: balance;
+}
+
+.category {
+  margin: 1.25rem 0 0;
+  font-size: 0.9375rem;
+  letter-spacing: 0.02em;
   color: var(--accent);
 }
 
+/* ---------- body ---------- */
+
 .body {
-  white-space: pre-wrap;
-  line-height: 1.7;
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/**
+ * Everything inside .body arrives through [innerHTML], and injected nodes are
+ * not stamped with this component's _ngcontent attribute — so under emulated
+ * encapsulation a plain `.body p { }` compiles to `.body p[_ngcontent-x]` and
+ * silently matches nothing. ::ng-deep is the escape hatch; anchoring it under
+ * :host is what stops these generic element rules leaking to the whole app.
+ *
+ * ViewEncapsulation.None would also "work" and is worse: this component owns
+ * .title, .body and .category, which would then be global names.
+ */
+:host ::ng-deep {
+  /* No `white-space: pre-line` any more. It existed because paragraphs were
+     separated by literal blank lines in a text blob; with real <p> tags the
+     newlines between them are collapsible whitespace, and pre-line would
+     render them as phantom blank lines inside every paragraph. */
+  .body p {
+    margin: 0 0 1rem;
+    text-wrap: pretty;
+  }
+
+  /* h1 is the page title and is not in the sanitizer's allowlist, so the body's
+     own headings start at h2 — the same display face as the title, stepped down. */
+  .body h2,
+  .body h3,
+  .body h4 {
+    margin: clamp(2rem, 4vw, 2.75rem) 0 0.75rem;
+    font-family: var(--font-display);
+    font-weight: 300;
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+  }
+
+  .body h2 {
+    font-size: clamp(1.5rem, 1rem + 1.8vw, 2rem);
+  }
+
+  .body h3 {
+    font-size: 1.25rem;
+  }
+
+  .body h4 {
+    font-size: 1.0625rem;
+  }
+
+  .body ul,
+  .body ol {
+    margin: 0 0 1rem;
+    padding-inline-start: 1.5rem;
+  }
+
+  .body li {
+    margin-bottom: 0.35rem;
+  }
+
+  .body blockquote {
+    margin: 1.75rem 0;
+    padding-inline-start: 1.25rem;
+    border-inline-start: 2px solid color-mix(in srgb, var(--fg) 15%, transparent);
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  .body a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .body img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .body figure {
+    margin: 2rem 0;
+  }
+
+  .body figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .body hr {
+    margin: 2.5rem 0;
+    border: 0;
+    border-top: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+  }
+
+  /* The author's own hook: `<div class="center">` is why `class` survives both
+     sanitizers. Bootstrap's .text-center works too; this is the shorter name
+     they asked for. */
+  .body .center {
+    text-align: center;
+  }
+
+  .body > :first-child {
+    margin-top: 0;
+  }
+
+  .body > :last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* ---------- signature ---------- */
+
+.signature {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.signature__back {
+  margin-inline-start: auto;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.signature__back:hover,
+.signature__back:focus-visible {
+  text-decoration: underline;
+}
+
+/* ---------- the other two states ---------- */
+
+.unavailable,
+.missing {
+  max-width: 32rem;
+  margin-inline: auto;
+  padding-block: clamp(3rem, 8vw, 6rem);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.unavailable a {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--accent);
 }
