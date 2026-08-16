@@ -15,6 +15,7 @@ from .serializers import (
     AuthorSerializer,
     CategorySerializer,
     CommentCreateSerializer,
+    ContactMessageCreateSerializer,
     PageSerializer,
     PostDetailSerializer,
     PostListSerializer,
@@ -165,6 +166,42 @@ class PostCommentsView(APIView):
         )
         return Response(
             {"detail": "Thank you. Your comment is awaiting review."},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ContactView(APIView):
+    """The contact page's form. Same shape as the comment endpoint.
+
+    Anonymous and cookie-free for the same reason and with the same safety
+    argument: no session, nothing reads request.user, so there is no ambient
+    authority for a forged request to borrow. What it can do is put a row in an
+    inbox — which is what the form is for.
+
+    Nothing here is ever read back out through the API; the only reader is the
+    admin.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_scope = "contact"
+
+    def get_throttles(self):
+        return [ScopedRateThrottle()]
+
+    def post(self, request):
+        serializer = ContactMessageCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data.pop("url2", ""):
+            return Response(
+                {"detail": "Thank you. Your details have been received."},
+                status=status.HTTP_201_CREATED,
+            )
+
+        serializer.save(site=request.site, language_code=resolve_lang(request))
+        return Response(
+            {"detail": "Thank you. Your details have been received."},
             status=status.HTTP_201_CREATED,
         )
 

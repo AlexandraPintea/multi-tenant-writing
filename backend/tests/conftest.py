@@ -28,6 +28,7 @@ MANAGED_MODELS = [
     ("content", "page"),
     ("content", "category"),
     ("content", "comment"),
+    ("content", "contactmessage"),
     ("people", "author"),
 ]
 

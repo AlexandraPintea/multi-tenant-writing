@@ -5,7 +5,7 @@ from parler.forms import TranslatableModelForm
 
 from admin_scoped.admin import SiteScopedAdmin
 
-from .models import Category, Comment, Page, Post
+from .models import Category, Comment, ContactMessage, Page, Post
 
 
 class PostAdminForm(TranslatableModelForm):
@@ -184,6 +184,51 @@ class CommentAdmin(SiteScopedAdmin, admin.ModelAdmin):
     def unapprove_comments(self, request, queryset):
         updated = queryset.update(is_approved=False, approved_at=None)
         self.message_user(request, f"{updated} comment(s) hidden.")
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(SiteScopedAdmin, admin.ModelAdmin):
+    """The contact inbox. Read, mark handled, delete — never edit.
+
+    Everything is read-only for the same reason as comments: these are someone
+    else's words and details, and the only useful actions are triage and
+    deletion. Deletion matters more here than elsewhere — it is the mechanism
+    behind "please remove my details".
+    """
+
+    site_field = "site"
+
+    list_display = [
+        "created_at",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "is_handled",
+    ]
+    list_filter = ["is_handled"]
+    search_fields = ["first_name", "last_name", "email", "phone"]
+    date_hierarchy = "created_at"
+    actions = ["mark_handled", "mark_unhandled"]
+    readonly_fields = [
+        "site",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "language_code",
+        "created_at",
+    ]
+
+    @admin.action(description="Mark as handled")
+    def mark_handled(self, request, queryset):
+        updated = queryset.update(is_handled=True)
+        self.message_user(request, f"{updated} message(s) marked handled.")
+
+    @admin.action(description="Mark as not handled")
+    def mark_unhandled(self, request, queryset):
+        updated = queryset.update(is_handled=False)
+        self.message_user(request, f"{updated} message(s) marked unhandled.")
 
 
 @admin.register(Category)

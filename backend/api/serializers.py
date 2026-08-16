@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from content.models import Comment
+from content.models import Comment, ContactMessage
 
 
 class SiteConfigSerializer(serializers.Serializer):
@@ -155,6 +155,39 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         cleaned = value.strip()
         if len(cleaned) < 2:
             raise serializers.ValidationError("That comment looks empty.")
+        return cleaned
+
+
+class ContactMessageCreateSerializer(serializers.ModelSerializer):
+    """A contact-page submission. Write-only; nothing here is ever read back.
+
+    `site`, `language_code` and `is_handled` are absent by design — they come
+    from the request, not the payload.
+    """
+
+    # Same trap as the comment form: a field no reader can see, filled in only
+    # by something submitting every input it finds.
+    url2 = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+    class Meta:
+        model = ContactMessage
+        fields = ["first_name", "last_name", "email", "phone", "url2"]
+        extra_kwargs = {
+            "first_name": {"allow_blank": False},
+            "last_name": {"allow_blank": False},
+            "phone": {"required": False},
+        }
+
+    def validate_first_name(self, value):
+        return self._required_text(value, "Please give a first name.")
+
+    def validate_last_name(self, value):
+        return self._required_text(value, "Please give a last name.")
+
+    def _required_text(self, value, message):
+        cleaned = value.strip()
+        if not cleaned:
+            raise serializers.ValidationError(message)
         return cleaned
 
 

@@ -8,7 +8,6 @@
   <p class="comment-form__success" role="status">{{ 'comments.success' | translate }}</p>
 } @else {
   <form class="comment-form" novalidate (ngSubmit)="submit()" [formGroup]="form">
-
     <label class="comment-form__field">
       <span class="comment-form__label">{{ 'comments.name' | translate }}</span>
       <input

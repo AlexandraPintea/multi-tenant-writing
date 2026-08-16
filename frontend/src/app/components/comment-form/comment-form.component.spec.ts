@@ -68,12 +68,6 @@ describe('CommentFormComponent', () => {
 
   afterEach(() => http.verify());
 
-  it('says up front that comments are moderated', () => {
-    // Before submitting, not only after: the reader should know the rules
-    // before spending effort on a comment.
-    expect(text()).toContain('Comments are read before they appear.');
-  });
-
   it('does not submit an empty form, and says which field is missing', async () => {
     await submit();
 

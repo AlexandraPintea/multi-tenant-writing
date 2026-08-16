@@ -1,0 +1,100 @@
+<section class="contact">
+  <h1 class="contact__title">{{ 'contact.title' | translate }}</h1>
+
+  <p class="contact__intro">{{ 'contact.intro' | translate }}</p>
+
+  <div class="contact__panel">
+    @if (status() === 'success') {
+      <div class="contact__success" role="status" aria-live="polite">
+        <p class="contact__success-title">{{ 'contact.successTitle' | translate }}</p>
+        <p>{{ 'contact.successBody' | translate }}</p>
+        <button type="button" class="contact__button contact__button--ghost" (click)="resetForm()">
+          {{ 'contact.sendAnother' | translate }}
+        </button>
+      </div>
+    } @else {
+      <form class="contact-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <fieldset class="contact-form__group">
+          <legend class="contact-form__legend">{{ 'contact.nameLegend' | translate }}</legend>
+
+          <div class="contact-form__row">
+            <div class="contact-form__field">
+              <label class="contact-form__label" for="firstName">
+                {{ 'contact.firstName' | translate }}
+                <span class="contact-form__hint">{{ 'contact.required' | translate }}</span>
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                autocomplete="given-name"
+                formControlName="firstName"
+                [attr.aria-invalid]="showError('firstName')"
+                [attr.aria-describedby]="showError('firstName') ? 'firstName-error' : null"
+              />
+              @if (errorFor('firstName'); as message) {
+                <p class="contact-form__error" id="firstName-error">{{ message | translate }}</p>
+              }
+            </div>
+
+            <div class="contact-form__field">
+              <label class="contact-form__label" for="lastName">
+                {{ 'contact.lastName' | translate }}
+                <span class="contact-form__hint">{{ 'contact.required' | translate }}</span>
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                autocomplete="family-name"
+                formControlName="lastName"
+                [attr.aria-invalid]="showError('lastName')"
+                [attr.aria-describedby]="showError('lastName') ? 'lastName-error' : null"
+              />
+              @if (errorFor('lastName'); as message) {
+                <p class="contact-form__error" id="lastName-error">{{ message | translate }}</p>
+              }
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="contact-form__field">
+          <label class="contact-form__label" for="email">
+            {{ 'contact.email' | translate }}
+            <span class="contact-form__hint">{{ 'contact.required' | translate }}</span>
+          </label>
+          <input
+            id="email"
+            type="email"
+            autocomplete="email"
+            formControlName="email"
+            [attr.aria-invalid]="showError('email')"
+            [attr.aria-describedby]="showError('email') ? 'email-error' : null"
+          />
+          @if (errorFor('email'); as message) {
+            <p class="contact-form__error" id="email-error">{{ message | translate }}</p>
+          }
+        </div>
+
+        <div class="contact-form__field">
+          <label class="contact-form__label" for="phone">{{ 'contact.phone' | translate }}</label>
+          <input id="phone" type="tel" autocomplete="tel" formControlName="phone" />
+        </div>
+
+        <!-- Honeypot: off-screen, out of the tab order, hidden from assistive tech. -->
+        <div class="contact-form__trap" aria-hidden="true">
+          <label>
+            Leave this empty
+            <input type="text" formControlName="url2" tabindex="-1" autocomplete="off" />
+          </label>
+        </div>
+
+        @if (submitError(); as message) {
+          <p class="contact-form__submit-error" role="alert">{{ message | translate }}</p>
+        }
+
+        <button type="submit" class="contact__button" [disabled]="sending()">
+          {{ (sending() ? 'contact.sending' : 'contact.submit') | translate }}
+        </button>
+      </form>
+    }
+  </div>
+</section>

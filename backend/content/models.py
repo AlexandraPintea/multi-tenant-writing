@@ -275,6 +275,41 @@ class Comment(models.Model):
                 )
 
 
+class ContactMessage(models.Model):
+    """Someone leaving their details on the contact page.
+
+    Lives here beside Comment rather than in `people`, which is about authors
+    and staff accounts: both of these are things a *reader* submits and a human
+    then reads.
+
+    Unlike a comment this is never published anywhere — it exists only in the
+    admin. Which also means it is the first personal data the project stores:
+    a name, an email address and possibly a phone number. Whatever backup story
+    the deployment lands on inherits an obligation it did not have before.
+    """
+
+    site = models.ForeignKey(
+        "sites_core.Site",
+        on_delete=models.CASCADE,
+        related_name="contact_messages",
+    )
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=254)
+    phone = models.CharField(max_length=40, blank=True)
+    language_code = models.CharField(max_length=10, blank=True)
+    is_handled = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        # Newest first: this is an inbox, not a conversation.
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["site", "is_handled", "created_at"])]
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} <{self.email}>"
+
+
 class Page(TranslatableModel):
     site = models.ForeignKey(
         "sites_core.Site",

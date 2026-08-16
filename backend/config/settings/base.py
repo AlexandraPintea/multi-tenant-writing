@@ -132,7 +132,7 @@ REST_FRAMEWORK = {
     # archive and the reading pages, and behind nginx — or any office NAT —
     # every reader shares one IP, so the site would start answering 429 to
     # people who are only reading.
-    "DEFAULT_THROTTLE_RATES": {"comments": "5/hour"},
+    "DEFAULT_THROTTLE_RATES": {"comments": "5/hour", "contact": "5/hour"},
 }
 
 # NOTE for the production settings that Phase 3+ will add: DRF's throttle

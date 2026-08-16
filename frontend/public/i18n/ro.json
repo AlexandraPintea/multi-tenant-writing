@@ -25,6 +25,27 @@
     "older": "Mai vechi",
     "olderLabel": "Textul anterior"
   },
+  "contact": {
+    "title": "Să ținem legătura",
+    "intro": "Dacă vrei să primești vești despre ce scriu, îmi poți lăsa datele tale de contact mai jos.",
+    "nameLegend": "Nume",
+    "firstName": "Prenume",
+    "lastName": "Nume de familie",
+    "email": "Email",
+    "phone": "Telefon",
+    "required": "(obligatoriu)",
+    "submit": "Trimite",
+    "sending": "Se trimite…",
+    "successTitle": "Mulțumesc.",
+    "successBody": "Datele tale au ajuns la mine. Revin cu vești.",
+    "sendAnother": "Trimite din nou",
+    "errorRequired": "Acest câmp este obligatoriu.",
+    "errorEmail": "Te rog scrie o adresă de email validă.",
+    "errorTooLong": "Această valoare este prea lungă.",
+    "errorField": "Te rog verifică acest câmp.",
+    "errorSubmit": "Ceva nu a mers la trimiterea datelor. Te rog încearcă din nou.",
+    "errorThrottled": "Sunt cam multe trimiteri într-un timp scurt. Încearcă mai târziu."
+  },
   "comments": {
     "title": "Comentarii",
     "none": "Niciun comentariu încă.",
