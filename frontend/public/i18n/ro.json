@@ -27,8 +27,8 @@
     "olderLabel": "Textul anterior"
   },
   "contact": {
-    "title": "Să ținem legătura",
-    "intro": "Dacă vrei să primești vești despre ce scriu, îmi poți lăsa datele tale de contact mai jos.",
+    "title": "Să păstrăm legătura",
+    "intro": "Dacă dorești să primești update-uri despre ceea ce scriu, îți poți lăsa datele de contact mai jos.",
     "nameLegend": "Nume",
     "firstName": "Prenume",
     "lastName": "Nume de familie",
@@ -50,7 +50,6 @@
   },
   "comments": {
     "title": "Comentarii",
-    "none": "Niciun comentariu încă.",
     "name": "Nume",
     "body": "Comentariu",
     "nameRequired": "Te rog scrie un nume.",

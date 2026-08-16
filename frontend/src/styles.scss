@@ -4,6 +4,15 @@
 @use 'styles/bootstrap';
 @use 'styles/variables';
 
+// Montserrat and Poppins are loaded through angular.json's `styles` array,
+// from the self-hosted @fontsource packages — they cannot be @use'd from here,
+// because a Sass namespace cannot be called "300.css".
+//
+// Self-hosted rather than linked from Google Fonts, deliberately: the Google
+// CDN sees every visitor's IP, which would be a third-party request on a site
+// whose privacy notice says there are none, and would put personal data in
+// front of a US provider. These files come from our own origin.
+
 :root {
   --bg: #ffffff;
   --fg: #000000; /* the reference is pure black, not #1a1a1a */

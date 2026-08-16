@@ -54,7 +54,7 @@
 
 .comment-form__privacy {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.75rem; // 12px — a step below the 13px the rest of the small print uses
   line-height: 1.5;
   color: var(--muted);
 }

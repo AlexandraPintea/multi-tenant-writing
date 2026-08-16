@@ -50,7 +50,6 @@
   },
   "comments": {
     "title": "Comments",
-    "none": "No comments yet.",
     "name": "Name",
     "body": "Comment",
     "nameRequired": "Please give a name to post under.",
