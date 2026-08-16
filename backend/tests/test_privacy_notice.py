@@ -2,12 +2,13 @@
 
 Not a test of whether the notice is legally sufficient — nothing here can
 establish that. What is testable is that it exists on every site, in both
-languages, that it is reachable, and that it still carries the markers that say
-it is a draft.
+languages, that it is reachable, that it carries a contact address a reader can
+actually write to, and that no placeholder survived into it.
 """
 
 import pytest
 from django.core.management import call_command
+from django.utils import timezone
 
 from content.models import Page
 
@@ -55,15 +56,35 @@ class TestSeedPrivacyNotice:
                 assert page.title
                 assert "<h2>" in page.content
 
-    def test_the_notice_still_says_it_is_a_draft(self, alex_site):
-        # The controller's contact address is the one thing code cannot know.
-        # If this assertion ever fails, someone filled it in — which is the
-        # point at which a human should also have read the rest.
+    def test_no_placeholder_survives_in_either_language(self, alex_site):
+        # This was the assertion that the notice still *was* a draft. Inverted
+        # now that it is not: a reader must never meet [ADD DATE] on a page
+        # that tells them what happens to their personal data.
+        call_command("seed_privacy_notice")
+
+        page = Page.objects.get(site=alex_site, slug="privacy")
+        for language in ("en", "ro"):
+            page.set_current_language(language)
+            for marker in ("[ADD", "[CONFIRM", "[ADAUGĂ", "[DE CONFIRMAT"):
+                assert marker not in page.content
+
+    def test_the_contact_address_is_reachable_in_both_languages(self, alex_site):
+        # A notice with no way to exercise the rights it describes is not one.
+        call_command("seed_privacy_notice")
+
+        page = Page.objects.get(site=alex_site, slug="privacy")
+        for language in ("en", "ro"):
+            page.set_current_language(language)
+            assert "anaalexandrapintea@gmail.com" in page.content
+            # mailto has to survive the sanitizer's URL-scheme allowlist.
+            assert 'href="mailto:anaalexandrapintea@gmail.com"' in page.content
+
+    def test_it_is_stamped_with_the_date_it_was_written(self, alex_site):
         call_command("seed_privacy_notice")
 
         page = Page.objects.get(site=alex_site, slug="privacy")
         page.set_current_language("en")
-        assert "ADD YOUR CONTACT EMAIL" in page.content
+        assert str(timezone.localdate().year) in page.content
 
     def test_it_does_not_overwrite_an_edited_notice(self, alex_site):
         # Re-running the seeder must not silently discard wording someone
