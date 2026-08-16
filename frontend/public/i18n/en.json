@@ -21,7 +21,44 @@
   },
   "post": {
     "notInLanguage": "This piece is only available in {{languages}}.",
-    "readIn": "Read it in {{language}}"
+    "readIn": "Read it in {{language}}",
+    "older": "Older",
+    "olderLabel": "Older post"
+  },
+  "contact": {
+    "title": "Let's stay in touch",
+    "intro": "If you would like to receive updates about my writing, you can leave your contact details below.",
+    "nameLegend": "Name",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "phone": "Phone",
+    "required": "(required)",
+    "submit": "Submit",
+    "sending": "Sending…",
+    "successTitle": "Thank you.",
+    "successBody": "Your details have been received. I'll be in touch.",
+    "sendAnother": "Send another",
+    "errorRequired": "This field is required.",
+    "errorEmail": "Please enter a valid email address.",
+    "errorTooLong": "This value is too long.",
+    "errorField": "Please check this field.",
+    "errorSubmit": "Something went wrong while sending your details. Please try again.",
+    "errorThrottled": "That is a few submissions in a short time. Please try again later."
+  },
+  "comments": {
+    "title": "Comments",
+    "none": "No comments yet.",
+    "name": "Name",
+    "body": "Comment",
+    "nameRequired": "Please give a name to post under.",
+    "bodyRequired": "Please write a comment.",
+    "moderationNote": "Comments are read before they appear.",
+    "submit": "Post comment",
+    "submitting": "Sending…",
+    "success": "Thank you. Your comment will appear once it has been read.",
+    "errorThrottled": "That is a few comments in a short time. Please try again later.",
+    "errorGeneric": "Your comment could not be sent. Please try again."
   },
   "toggle": {
     "label": "Language",

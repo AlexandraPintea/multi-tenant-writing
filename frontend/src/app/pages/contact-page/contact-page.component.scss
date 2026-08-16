@@ -1,0 +1,193 @@
+:host {
+  display: block;
+}
+
+.contact {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+
+.contact__title {
+  margin: 0 0 32px;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.25rem);
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.contact__intro {
+  margin: 0 auto 40px;
+  max-width: 62ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.contact__panel {
+  background: #f4f4f4;
+  border-radius: 12px;
+  padding: 40px clamp(20px, 5vw, 48px);
+}
+
+/* ---------- form ---------- */
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.contact-form__group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.contact-form__legend {
+  padding: 0;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.contact-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.contact-form__field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.contact-form__label {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.contact-form__hint {
+  color: #6f6f6f;
+}
+
+.contact-form input {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #2b2b2b;
+  border-radius: 0;
+  padding: 6px 2px;
+  width: 100%;
+  transition: border-color 0.15s ease;
+}
+
+.contact-form input:focus-visible {
+  outline: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #000;
+}
+
+.contact-form input[aria-invalid='true'] {
+  border-bottom-color: #b3261e;
+}
+
+.contact-form__error,
+.contact-form__submit-error {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #b3261e;
+}
+
+.contact-form__submit-error {
+  margin: 0;
+}
+
+/**
+ * Off-screen rather than display:none — a bot that skips hidden inputs is not
+ * the one this catches, and some check for display:none specifically.
+ */
+.contact-form__trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ---------- buttons ---------- */
+
+.contact__button {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 600;
+  background: transparent;
+  color: #000;
+  border: 2px solid #000;
+  border-radius: 4px;
+  padding: 14px 26px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.contact__button:hover:not(:disabled),
+.contact__button:focus-visible {
+  background: #000;
+  color: #fff;
+}
+
+.contact__button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.contact__button--ghost {
+  font-weight: 400;
+  border-width: 1px;
+  padding: 10px 20px;
+  margin-top: 20px;
+}
+
+/* ---------- success ---------- */
+
+.contact__success {
+  text-align: center;
+}
+
+.contact__success p {
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+
+.contact__success-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+
+.contact__success .contact__button {
+  align-self: center;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 600px) {
+  .contact-form__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .contact__panel {
+    padding: 28px 20px;
+  }
+}

@@ -23,7 +23,11 @@ def test_bilingual_post_is_reachable_in_both_languages(client, bilingual_post):
     assert english.status_code == romanian.status_code == 200
     assert english.json()["title"] == "The Power of Words"
     assert romanian.json()["title"] == "Puterea Cuvintelor"
-    assert romanian.json()["body"] == "Cuvintele modelează lumi."
+    # Wrapped, because bodies are HTML now: the fixture writes plain text and
+    # the save hook promotes it to a paragraph (content/sanitize.py). Asserted
+    # exactly rather than with `in`, so the wrapping reads as intended
+    # behaviour rather than something merely tolerated.
+    assert romanian.json()["body"] == "<p>Cuvintele modelează lumi.</p>"
 
 
 @pytest.mark.django_db

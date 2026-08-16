@@ -65,11 +65,12 @@ export const routes: Routes = [
       import('./pages/static-page/static-page.component').then((m) => m.StaticPageComponent),
   },
   {
+    // Its own component, not StaticPageComponent: this page has a form and an
+    // HTTP call, where /about only renders admin-written prose. No resolver
+    // either — there is nothing to fetch before rendering it.
     path: 'contact',
-    data: { pageSlug: 'contact' },
-    resolve: { page: pageResolver },
     loadComponent: () =>
-      import('./pages/static-page/static-page.component').then((m) => m.StaticPageComponent),
+      import('./pages/contact-page/contact-page.component').then((m) => m.ContactPageComponent),
   },
   { path: '**', redirectTo: '/writings' },
 ];

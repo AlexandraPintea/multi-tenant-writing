@@ -16,6 +16,11 @@ dependencies = [
     "djangorestframework~=3.17.1",
     "django-cors-headers~=4.9.0",
     "Pillow~=12.2.0",
+    # Sanitizes author-written HTML in post bodies against an allowlist, on save.
+    # nh3 rather than bleach: bleach is in maintenance mode and pulls in html5lib,
+    # while nh3 is a binding to ammonia and ships wheels for both linux/amd64
+    # (CI, the Docker image) and Windows (this dev machine).
+    "nh3~=0.3.2",
 ]
 
 [project.optional-dependencies]

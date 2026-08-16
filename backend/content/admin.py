@@ -1,10 +1,11 @@
 from django.contrib import admin
+from django.utils import timezone
 from parler.admin import TranslatableAdmin
 from parler.forms import TranslatableModelForm
 
 from admin_scoped.admin import SiteScopedAdmin
 
-from .models import Category, Page, Post
+from .models import Category, Comment, ContactMessage, Page, Post
 
 
 class PostAdminForm(TranslatableModelForm):
@@ -134,6 +135,100 @@ class PostAdmin(SiteScopedAdmin, TranslatableAdmin):
         )
 
     author_names.short_description = "Authors"
+
+
+@admin.register(Comment)
+class CommentAdmin(SiteScopedAdmin, admin.ModelAdmin):
+    """The moderation queue: nothing a reader writes reaches a page unapproved.
+
+    Everything is read-only. A moderator's job here is to approve or delete —
+    editing someone else's words while their name stays on them is not a
+    feature, and read-only also keeps the post FK out of the form entirely,
+    which matters: "post" is deliberately absent from
+    SiteScopedAdmin.site_scoped_relations, because that machinery narrows a
+    relation with filter(site=...) and Post reaches Site through `sites`.
+    """
+
+    site_field = "site"
+
+    list_display = ["created_at", "name", "post", "site", "is_approved", "preview"]
+    list_filter = ["is_approved", ("post", admin.RelatedOnlyFieldListFilter)]
+    search_fields = ["name", "body"]
+    date_hierarchy = "created_at"
+    actions = ["approve_comments", "unapprove_comments"]
+    readonly_fields = [
+        "post",
+        "site",
+        "language_code",
+        "name",
+        "body",
+        "created_at",
+        "approved_at",
+    ]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("post", "site")
+
+    @admin.display(description="Comment")
+    def preview(self, obj):
+        return obj.body[:80] + ("…" if len(obj.body) > 80 else "")
+
+    @admin.action(description="Approve selected comments")
+    def approve_comments(self, request, queryset):
+        # queryset arrives already narrowed by get_queryset, so a hand-crafted
+        # POST naming another tenant's comment ids cannot reach this.
+        updated = queryset.update(is_approved=True, approved_at=timezone.now())
+        self.message_user(request, f"{updated} comment(s) approved.")
+
+    @admin.action(description="Hide selected comments")
+    def unapprove_comments(self, request, queryset):
+        updated = queryset.update(is_approved=False, approved_at=None)
+        self.message_user(request, f"{updated} comment(s) hidden.")
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(SiteScopedAdmin, admin.ModelAdmin):
+    """The contact inbox. Read, mark handled, delete — never edit.
+
+    Everything is read-only for the same reason as comments: these are someone
+    else's words and details, and the only useful actions are triage and
+    deletion. Deletion matters more here than elsewhere — it is the mechanism
+    behind "please remove my details".
+    """
+
+    site_field = "site"
+
+    list_display = [
+        "created_at",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "is_handled",
+    ]
+    list_filter = ["is_handled"]
+    search_fields = ["first_name", "last_name", "email", "phone"]
+    date_hierarchy = "created_at"
+    actions = ["mark_handled", "mark_unhandled"]
+    readonly_fields = [
+        "site",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "language_code",
+        "created_at",
+    ]
+
+    @admin.action(description="Mark as handled")
+    def mark_handled(self, request, queryset):
+        updated = queryset.update(is_handled=True)
+        self.message_user(request, f"{updated} message(s) marked handled.")
+
+    @admin.action(description="Mark as not handled")
+    def mark_unhandled(self, request, queryset):
+        updated = queryset.update(is_handled=False)
+        self.message_user(request, f"{updated} message(s) marked unhandled.")
 
 
 @admin.register(Category)

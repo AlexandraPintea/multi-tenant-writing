@@ -127,7 +127,20 @@ DEFAULT_SITE_DOMAIN = config("DEFAULT_SITE_DOMAIN", default="alexandrapintea.eu"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    # Only the comment endpoint is throttled, by scope. Deliberately no
+    # DEFAULT_THROTTLE_CLASSES: a global anonymous throttle would also cover the
+    # archive and the reading pages, and behind nginx — or any office NAT —
+    # every reader shares one IP, so the site would start answering 429 to
+    # people who are only reading.
+    "DEFAULT_THROTTLE_RATES": {"comments": "5/hour", "contact": "5/hour"},
 }
+
+# NOTE for the production settings that Phase 3+ will add: DRF's throttle
+# counters live in the default cache, and no CACHES is configured, so Django
+# falls back to per-process LocMemCache. With one runserver process that is
+# honest; under gunicorn with N workers the effective limit becomes N x the
+# rate, and a restart forgets everything. A shared cache (DatabaseCache needs no
+# new dependency) is the fix when there is a deployment to fix it in.
 
 # CORS: no origin is trusted by default. Development adds its own in
 # settings/local.py; production must name the SSR container's origin explicitly

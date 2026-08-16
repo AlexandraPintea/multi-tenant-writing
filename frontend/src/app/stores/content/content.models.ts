@@ -24,6 +24,30 @@ export interface Post {
   available_languages: string[];
   /** Detail only — absent on list payloads. */
   body?: string;
+  /**
+   * The older neighbour in this site's archive for this language, or null on
+   * the oldest post. Detail only, and optional so list fixtures still typecheck.
+   */
+  next_post?: NextPost | null;
+  /**
+   * Approved comments for this post on this site, oldest first. Detail only.
+   * Embedded rather than fetched separately, so the thread is server-rendered
+   * with the article.
+   */
+  comments?: Comment[];
+}
+
+/** An approved comment. Never carries anything the moderator sees but a reader should not. */
+export interface Comment {
+  name: string;
+  body: string;
+  created_at: string;
+}
+
+/** Just enough of a post to link to it. */
+export interface NextPost {
+  slug: string;
+  title: string;
 }
 
 export interface Author {
