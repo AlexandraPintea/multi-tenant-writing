@@ -1,0 +1,12 @@
+# Everything here is either rebuilt inside the image or has no business in it.
+# node_modules especially: copying a Windows-installed tree into a Linux image
+# would bring platform-specific binaries that cannot run there.
+node_modules/
+dist/
+.angular/
+
+playwright-report/
+test-results/
+
+*.log
+npm-debug.log*

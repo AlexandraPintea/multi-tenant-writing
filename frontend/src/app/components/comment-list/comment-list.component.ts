@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
 import { Component, input } from '@angular/core';
-import { TranslatePipe } from '@ngx-translate/core';
 
 import { Comment } from '../../stores/content/content.models';
 
@@ -12,7 +11,7 @@ import { Comment } from '../../stores/content/content.models';
  */
 @Component({
   selector: 'app-comment-list',
-  imports: [DatePipe, TranslatePipe],
+  imports: [DatePipe],
   templateUrl: './comment-list.component.html',
   styleUrl: './comment-list.component.scss',
 })
