@@ -5,7 +5,11 @@
     <title>WritingFrontend</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- Both tenants share this build, so the tab icon is the same on each.
+         256px rather than a 16px .ico: browsers scale down cleanly, and the
+         same file serves the phone bookmark. -->
+    <link rel="icon" type="image/png" href="icon.png" />
+    <link rel="apple-touch-icon" href="icon.png" />
   </head>
   <body>
     <app-root></app-root>
