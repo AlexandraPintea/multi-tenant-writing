@@ -3,9 +3,18 @@
 }
 
 article {
+  /* A text-only page keeps a reading measure. 70% of a wide screen is close to
+     200 characters a line, which is where the eye loses its place on the way
+     back — fine beside a photo, wrong for a column of prose like /privacy. */
   max-width: 42rem;
   margin-inline: auto;
   padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+
+article.has-image {
+  /* The two-column pages get the wider measure, because the text only occupies
+     part of it. */
+  max-width: 70%;
 }
 
 h1 {
@@ -18,16 +27,51 @@ h1 {
 }
 
 /**
- * Never wider than the text column, and never stretched past its own size —
- * `width: auto` with a max, so a portrait stays a portrait and a small upload
- * is not blown up into a blurry banner. Centred so either shape sits well.
+ * Photo left, text right, both the same height.
+ *
+ * Grid rather than flex for the equal-height part: grid rows stretch their
+ * items by default, so the image's column is exactly as tall as the prose
+ * beside it without either side being told a pixel height. The image then
+ * fills that column with object-fit, which is what makes the two edges line
+ * up rather than merely start together.
  */
+.page-columns--with-image {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: stretch;
+}
+
 .page-image {
   display: block;
-  max-width: min(100%, 24rem);
-  width: auto;
-  height: auto;
-  margin: 0 auto clamp(1.5rem, 4vw, 2.5rem);
+  width: 100%;
+  /* Cropped, not letterboxed: matching the text's height means the photo
+     cannot also keep its own aspect ratio, and a cover crop reads better than
+     bars. A very long page therefore crops harder — if that bites, cap the
+     image with a max-height and set align-self: start. */
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* The single breakpoint the rest of the site uses. */
+@media (max-width: 767px) {
+  article.has-image {
+    max-width: none;
+    padding-inline: 6vw;
+  }
+
+  .page-columns--with-image {
+    /* Stacked: photo first, text under it. Nothing is matching heights any
+       more, so the image goes back to its own proportions. */
+    grid-template-columns: 1fr;
+  }
+
+  .page-image {
+    height: auto;
+    max-height: 60vh;
+    object-fit: contain;
+  }
 }
 
 .body {

@@ -1,28 +1,31 @@
 @if (page(); as loaded) {
-  <article>
+  <article [class.has-image]="!!loaded.image">
     <h1>{{ loaded.title }}</h1>
 
-    @if (loaded.image) {
+    <div class="page-columns" [class.page-columns--with-image]="!!loaded.image">
+      @if (loaded.image) {
+        <!--
+          Through the mediaUrl pipe, like every other upload: Django serialises
+          /media paths root-relative, which resolve against the frontend origin
+          and 404 in development.
+        -->
+        <img
+          class="page-image"
+          [src]="loaded.image | mediaUrl"
+          [alt]="loaded.image_alt"
+          loading="lazy"
+          decoding="async"
+        />
+      }
+
       <!--
-        Through the mediaUrl pipe, like every other upload: Django serialises
-        /media paths root-relative, which resolve against the frontend origin
-        and 404 in development.
+        Sanitized HTML, like a post body: Django cleans page content against the
+        same allowlist on save (content/sanitize.py), and Angular sanitizes this
+        binding again on render. The privacy notice is the reason — it needs
+        headings, lists and links, not one slab of prose.
       -->
-      <img
-        class="page-image"
-        [src]="loaded.image | mediaUrl"
-        [alt]="loaded.image_alt"
-        loading="lazy"
-        decoding="async"
-      />
-    }
-    <!--
-      Sanitized HTML, like a post body: Django cleans page content against the
-      same allowlist on save (content/sanitize.py), and Angular sanitizes this
-      binding again on render. The privacy notice is the reason — it needs
-      headings, lists and links, not one slab of prose.
-    -->
-    <div class="body" [innerHTML]="loaded.content"></div>
+      <div class="body" [innerHTML]="loaded.content"></div>
+    </div>
   </article>
 } @else {
   <p>{{ 'common.notFound' | translate }}</p>
