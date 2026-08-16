@@ -25,6 +25,20 @@
     "older": "Mai vechi",
     "olderLabel": "Textul anterior"
   },
+  "comments": {
+    "title": "Comentarii",
+    "none": "Niciun comentariu încă.",
+    "name": "Nume",
+    "body": "Comentariu",
+    "nameRequired": "Te rog scrie un nume.",
+    "bodyRequired": "Te rog scrie un comentariu.",
+    "moderationNote": "Comentariile sunt citite înainte de a fi publicate.",
+    "submit": "Trimite comentariul",
+    "submitting": "Se trimite…",
+    "success": "Mulțumesc. Comentariul tău va apărea după ce este citit.",
+    "errorThrottled": "Sunt cam multe comentarii într-un timp scurt. Încearcă mai târziu.",
+    "errorGeneric": "Comentariul nu a putut fi trimis. Te rog încearcă din nou."
+  },
   "toggle": {
     "label": "Limbă",
     "unavailable": "Acest text este disponibil doar în {{language}}."

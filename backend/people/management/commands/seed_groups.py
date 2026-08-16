@@ -12,6 +12,7 @@ MANAGED_MODELS = [
     ("content", "post"),
     ("content", "page"),
     ("content", "category"),
+    ("content", "comment"),
     ("people", "author"),
 ]
 

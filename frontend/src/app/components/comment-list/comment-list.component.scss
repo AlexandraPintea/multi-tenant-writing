@@ -1,0 +1,38 @@
+.comments {
+  margin: 0 0 2.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.comment + .comment {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--fg) 8%, transparent);
+}
+
+.comment__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.comment__name {
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.comment__body {
+  margin: 0;
+  line-height: 1.6;
+  // Reader text arrives with its own line breaks and no markup to carry them.
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.comments__empty {
+  margin: 0 0 2.5rem;
+  color: var(--muted);
+}

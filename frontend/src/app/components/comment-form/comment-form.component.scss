@@ -1,0 +1,53 @@
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 34rem;
+}
+
+.comment-form__note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.comment-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.comment-form__label {
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.comment-form__error {
+  font-size: 0.8125rem;
+  color: #b3261e;
+}
+
+.comment-form__success {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-inline-start: 2px solid var(--fg);
+  line-height: 1.6;
+}
+
+/**
+ * Off-screen rather than display:none. A bot that skips hidden inputs is not
+ * the one this catches, and some do check for display:none specifically.
+ */
+.comment-form__trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.comment-form button {
+  align-self: flex-start;
+}

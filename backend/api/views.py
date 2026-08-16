@@ -1,7 +1,10 @@
 from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from content.models import Category, Page, Post
@@ -11,6 +14,7 @@ from .serializers import (
     AuthorDetailSerializer,
     AuthorSerializer,
     CategorySerializer,
+    CommentCreateSerializer,
     PageSerializer,
     PostDetailSerializer,
     PostListSerializer,
@@ -101,6 +105,67 @@ class PostDetailView(APIView):
             PostDetailSerializer(
                 post, context={"lang": lang, "site": request.site}
             ).data
+        )
+
+
+class PostCommentsView(APIView):
+    """Submit a comment. Write-only, anonymous, and moderated.
+
+    There is no GET: approved comments are embedded in the post payload, so the
+    thread is server-rendered with the article rather than arriving later.
+
+    `authentication_classes = []` is what makes this work at all. DRF's default
+    SessionAuthentication is the only thing enforcing CSRF on an APIView, and a
+    cross-origin POST from the Angular app cannot carry a CSRF token today:
+    CORS_ALLOW_CREDENTIALS is unset, so no cookie is sent, and x-csrftoken is
+    not in CORS_ALLOW_HEADERS, so a preflight naming it would fail.
+
+    Removing it is safe *because* the endpoint has no ambient authority. CSRF
+    protects against a browser silently attaching proof of who you are; there
+    is no session here, nothing reads request.user, and a forged cross-origin
+    POST can do exactly what curl can do — put an unapproved row in a queue a
+    human then reads. Moderation is the real gate.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_scope = "comments"
+
+    def get_throttles(self):
+        # Scoped only, and only here: a global throttle would also cover the
+        # archive, and behind nginx or any office NAT every reader shares one
+        # IP, so the reading pages would start answering 429.
+        return [ScopedRateThrottle()]
+
+    def post(self, request, slug):
+        post = get_object_or_404(
+            Post,
+            slug=slug,
+            sites=request.site,
+            is_published=True,
+        )
+
+        serializer = CommentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data.pop("url2", ""):
+            # A filled honeypot is a bot. Answer as if it worked rather than
+            # explaining the trap — and store nothing.
+            return Response(
+                {"detail": "Thank you. Your comment is awaiting review."},
+                status=status.HTTP_201_CREATED,
+            )
+
+        serializer.save(
+            post=post,
+            # From the request, never the payload: a submission cannot choose
+            # which tenant's thread it lands in.
+            site=request.site,
+            language_code=resolve_lang(request),
+        )
+        return Response(
+            {"detail": "Thank you. Your comment is awaiting review."},
+            status=status.HTTP_201_CREATED,
         )
 
 

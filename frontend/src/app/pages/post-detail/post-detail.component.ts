@@ -10,6 +10,8 @@ import {
   postOf,
   selectContentSlice,
 } from '../../stores/content/content.selectors';
+import { CommentFormComponent } from '../../components/comment-form/comment-form.component';
+import { CommentListComponent } from '../../components/comment-list/comment-list.component';
 import { NextPostLinkComponent } from '../../components/next-post-link/next-post-link.component';
 import { SeoService } from '../../core/seo';
 import { LoadPostDetail } from '../../stores/content/content.actions';
@@ -26,7 +28,14 @@ import { LanguageStore } from '../../stores/language.store';
  */
 @Component({
   selector: 'app-post-detail',
-  imports: [RouterLink, TranslatePipe, DatePipe, NextPostLinkComponent],
+  imports: [
+    RouterLink,
+    TranslatePipe,
+    DatePipe,
+    NextPostLinkComponent,
+    CommentListComponent,
+    CommentFormComponent,
+  ],
   templateUrl: './post-detail.component.html',
   styleUrl: './post-detail.component.scss',
 })

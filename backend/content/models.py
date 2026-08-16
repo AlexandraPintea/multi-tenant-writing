@@ -226,6 +226,55 @@ def _sanitize_post_body(sender, instance, raw=False, **kwargs):
         instance.body = clean_body(instance.body)
 
 
+class Comment(models.Model):
+    """A reader's comment, invisible until a human approves it.
+
+    Not a TranslatableModel: a comment is written once, in whatever language the
+    reader was reading, and translating someone else's words would be strange.
+    """
+
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    # Alongside the post, not derived from it. Post.sites is M2M, so "the
+    # comments on this post" is ambiguous — a comment belongs to the *rendering*
+    # the reader was actually looking at, and a thread left on roamliterary.com
+    # has no business appearing on alexandrapintea.eu. Set from request.site in
+    # the view, never from the payload.
+    site = models.ForeignKey(
+        "sites_core.Site",
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    # Recorded, not filtered on: the EN and RO copies of a piece share one URL
+    # and one thread, so splitting them would make the conversation vanish when
+    # a reader toggles language. Kept because it is moderation context, and
+    # because a later decision to split would otherwise need data nobody kept.
+    language_code = models.CharField(max_length=10, blank=True)
+    name = models.CharField(max_length=80)
+    body = models.TextField(max_length=4000)
+    is_approved = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        # Oldest first — a thread reads forward, unlike the archive.
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["post", "site", "is_approved", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} on {self.post.slug}"
+
+    def clean(self):
+        # An admin-created row could otherwise be attached to a site the post is
+        # not published on, where it would be invisible and unexplainable.
+        if self.post_id and self.site_id:
+            if not self.post.sites.filter(pk=self.site_id).exists():
+                raise ValidationError(
+                    {"site": "This post is not published on that site."}
+                )
+
+
 class Page(TranslatableModel):
     site = models.ForeignKey(
         "sites_core.Site",

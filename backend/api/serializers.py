@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from content.models import Comment
+
 
 class SiteConfigSerializer(serializers.Serializer):
     """Theme + language config for the current Site.
@@ -109,9 +111,57 @@ class PostListSerializer(_TranslatedMixin, serializers.Serializer):
         return sorted(obj.get_available_languages())
 
 
+class CommentSerializer(serializers.Serializer):
+    """An approved comment, as a reader sees it.
+
+    A plain Serializer with three declared fields, so the allowlist is the
+    class itself: there is no arrangement of the model that could leak a
+    moderation flag or a future email column, because nothing else is declared.
+    """
+
+    name = serializers.CharField()
+    body = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    """A submission. The project's first writable serializer.
+
+    A ModelSerializer here and nowhere else on purpose: a write path wants
+    field-level validation and model-derived max lengths, which is exactly what
+    the read-only hand-rolled serializers have no use for.
+
+    `post`, `site`, `language_code` and `is_approved` are absent by design —
+    they come from the request, not the payload, so no submission can choose
+    which tenant it lands on or arrive pre-approved.
+    """
+
+    # Not a real field. Bots fill in every input they find; a reader never sees
+    # this one. Named url2 rather than website or url, which browser autofill
+    # likes to populate on a reader's behalf.
+    url2 = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ["name", "body", "url2"]
+
+    def validate_name(self, value):
+        cleaned = value.strip()
+        if not cleaned:
+            raise serializers.ValidationError("Please give a name to post under.")
+        return cleaned
+
+    def validate_body(self, value):
+        cleaned = value.strip()
+        if len(cleaned) < 2:
+            raise serializers.ValidationError("That comment looks empty.")
+        return cleaned
+
+
 class PostDetailSerializer(PostListSerializer):
     body = serializers.SerializerMethodField()
     next_post = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
 
     def get_body(self, obj):
         return self._t(obj, "body")
@@ -132,6 +182,21 @@ class PostDetailSerializer(PostListSerializer):
         if neighbour is None:
             return None
         return {"slug": neighbour.slug, "title": self._t(neighbour, "title")}
+
+    def get_comments(self, obj):
+        """Approved comments for this post *on this site*.
+
+        Embedded rather than fetched separately so the thread is in the
+        server-rendered HTML — comments are content, and a crawler that never
+        runs JavaScript should see them. It also means a submission needs no
+        cache invalidation: a new comment is unapproved, so the list genuinely
+        has not changed.
+
+        Language-agnostic: the EN and RO copies share one URL, and a thread
+        that vanished when a reader switched language would be baffling.
+        """
+        approved = obj.comments.filter(site=self.context["site"], is_approved=True)
+        return CommentSerializer(approved, many=True).data
 
 
 class AuthorSerializer(_TranslatedMixin, serializers.Serializer):

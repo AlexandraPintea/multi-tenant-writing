@@ -25,6 +25,20 @@
     "older": "Older",
     "olderLabel": "Older post"
   },
+  "comments": {
+    "title": "Comments",
+    "none": "No comments yet.",
+    "name": "Name",
+    "body": "Comment",
+    "nameRequired": "Please give a name to post under.",
+    "bodyRequired": "Please write a comment.",
+    "moderationNote": "Comments are read before they appear.",
+    "submit": "Post comment",
+    "submitting": "Sending…",
+    "success": "Thank you. Your comment will appear once it has been read.",
+    "errorThrottled": "That is a few comments in a short time. Please try again later.",
+    "errorGeneric": "Your comment could not be sent. Please try again."
+  },
   "toggle": {
     "label": "Language",
     "unavailable": "This piece is only available in {{language}}."

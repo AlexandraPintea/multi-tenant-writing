@@ -1,0 +1,22 @@
+@if (comments().length) {
+  <ul class="comments">
+    @for (comment of comments(); track $index) {
+      <li class="comment">
+        <p class="comment__meta">
+          <span class="comment__name">{{ comment.name }}</span>
+          <time [attr.datetime]="comment.created_at">
+            {{ comment.created_at | date: 'longDate' }}
+          </time>
+        </p>
+        <!--
+          Interpolated, never innerHTML. The post body is author-controlled and
+          sanitized on save; this text is reader-controlled, so the same rule
+          applies with far higher stakes.
+        -->
+        <p class="comment__body">{{ comment.body }}</p>
+      </li>
+    }
+  </ul>
+} @else {
+  <p class="comments__empty">{{ 'comments.none' | translate }}</p>
+}

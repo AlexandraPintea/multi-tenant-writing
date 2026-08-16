@@ -1,0 +1,63 @@
+@if (status() === 'success') {
+  <!--
+    Replacing the form, not just adding a line above it: a reader who submits
+    and sees the page unchanged assumes it failed and sends the comment again.
+    Nothing appears in the thread until a human approves it, so the UI has to
+    say that plainly.
+  -->
+  <p class="comment-form__success" role="status">{{ 'comments.success' | translate }}</p>
+} @else {
+  <form class="comment-form" novalidate (ngSubmit)="submit()" [formGroup]="form">
+    <p class="comment-form__note">{{ 'comments.moderationNote' | translate }}</p>
+
+    <label class="comment-form__field">
+      <span class="comment-form__label">{{ 'comments.name' | translate }}</span>
+      <input
+        class="form-control"
+        type="text"
+        formControlName="name"
+        maxlength="80"
+        autocomplete="name"
+        [attr.aria-invalid]="showRequired('name') || serverError('name') ? 'true' : null"
+      />
+      @if (showRequired('name')) {
+        <span class="comment-form__error">{{ 'comments.nameRequired' | translate }}</span>
+      } @else if (serverError('name'); as message) {
+        <span class="comment-form__error">{{ message }}</span>
+      }
+    </label>
+
+    <label class="comment-form__field">
+      <span class="comment-form__label">{{ 'comments.body' | translate }}</span>
+      <textarea
+        class="form-control"
+        rows="5"
+        formControlName="body"
+        maxlength="4000"
+        [attr.aria-invalid]="showRequired('body') || serverError('body') ? 'true' : null"
+      ></textarea>
+      @if (showRequired('body')) {
+        <span class="comment-form__error">{{ 'comments.bodyRequired' | translate }}</span>
+      } @else if (serverError('body'); as message) {
+        <span class="comment-form__error">{{ message }}</span>
+      }
+    </label>
+
+    <!-- Honeypot: off-screen, skipped by the keyboard, hidden from assistive
+         tech. Only something filling in every field it can find will touch it. -->
+    <div class="comment-form__trap" aria-hidden="true">
+      <label>
+        Leave this empty
+        <input type="text" formControlName="url2" tabindex="-1" autocomplete="off" />
+      </label>
+    </div>
+
+    @if (formError(); as message) {
+      <p class="comment-form__error" role="alert">{{ message | translate }}</p>
+    }
+
+    <button class="btn btn-dark" type="submit" [disabled]="status() === 'submitting'">
+      {{ (status() === 'submitting' ? 'comments.submitting' : 'comments.submit') | translate }}
+    </button>
+  </form>
+}
