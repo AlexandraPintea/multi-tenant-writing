@@ -283,9 +283,11 @@ class ContactMessage(models.Model):
     then reads.
 
     Unlike a comment this is never published anywhere — it exists only in the
-    admin. Which also means it is the first personal data the project stores:
-    a name, an email address and possibly a phone number. Whatever backup story
-    the deployment lands on inherits an obligation it did not have before.
+    admin. It is also the most personal data the project holds: a name and an
+    email address, which the deployment's backups inherit an obligation over.
+
+    No phone number: it was collected and never used, which is exactly the kind
+    of field data minimisation is about. Dropped in migration 0007.
     """
 
     site = models.ForeignKey(
@@ -296,8 +298,15 @@ class ContactMessage(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(max_length=254)
-    phone = models.CharField(max_length=40, blank=True)
     language_code = models.CharField(max_length=10, blank=True)
+    # Consent to be emailed updates. Sending marketing without it is what the
+    # GDPR and ePrivacy rules actually forbid, so it is stored as evidence
+    # rather than assumed from the fact that someone used the form.
+    consented_to_updates = models.BooleanField(default=False)
+    consented_at = models.DateTimeField(null=True, blank=True)
+    # The exact sentence they agreed to. Wording changes over time, and
+    # "they consented" is worth little without a record of to what.
+    consent_text = models.TextField(blank=True)
     is_handled = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
@@ -329,3 +338,15 @@ class Page(TranslatableModel):
 
     def __str__(self):
         return self.safe_translation_getter("title", any_language=True) or self.slug
+
+
+# Page content is markup too, from the moment the privacy notice needed
+# headings and lists instead of one slab of prose. Same hook, same allowlist,
+# same reason it is not in a form: the seeder writes these pages as well.
+PageTranslation = Page._parler_meta.root_model
+
+
+@receiver(pre_save, sender=PageTranslation)
+def _sanitize_page_content(sender, instance, raw=False, **kwargs):
+    if not raw:
+        instance.content = clean_body(instance.content)

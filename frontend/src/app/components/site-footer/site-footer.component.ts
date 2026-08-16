@@ -1,4 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { SiteConfigStore } from '../../stores/site-config.store';
 import { socialIconPath, socialSortKey } from './social-icons';
@@ -32,7 +34,7 @@ const MAILTO_KEYS = ['email', 'mail', 'e-mail'];
  */
 @Component({
   selector: 'app-site-footer',
-  imports: [],
+  imports: [RouterLink, TranslatePipe],
   templateUrl: './site-footer.component.html',
   styleUrl: './site-footer.component.scss',
 })

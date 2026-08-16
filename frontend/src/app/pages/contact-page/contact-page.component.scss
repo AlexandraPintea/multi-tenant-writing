@@ -122,6 +122,36 @@
   overflow: hidden;
 }
 
+/* ---------- consent + privacy ---------- */
+
+.contact-form__checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.contact-form__checkbox input {
+  // The shared `.contact-form input` rule strips the border and stretches the
+  // field to full width, which turns a checkbox into an invisible strip.
+  width: auto;
+  margin-top: 3px;
+  accent-color: #000;
+}
+
+.contact-form__privacy {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #6f6f6f;
+}
+
+.contact-form__privacy a {
+  color: inherit;
+}
+
 /* ---------- buttons ---------- */
 
 .contact__button {

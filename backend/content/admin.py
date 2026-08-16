@@ -203,11 +203,13 @@ class ContactMessageAdmin(SiteScopedAdmin, admin.ModelAdmin):
         "first_name",
         "last_name",
         "email",
-        "phone",
+        "consented_to_updates",
         "is_handled",
     ]
-    list_filter = ["is_handled"]
-    search_fields = ["first_name", "last_name", "email", "phone"]
+    # Filterable because "who am I allowed to email?" is the question this
+    # table has to answer before any newsletter goes out.
+    list_filter = ["consented_to_updates", "is_handled"]
+    search_fields = ["first_name", "last_name", "email"]
     date_hierarchy = "created_at"
     actions = ["mark_handled", "mark_unhandled"]
     readonly_fields = [
@@ -215,8 +217,10 @@ class ContactMessageAdmin(SiteScopedAdmin, admin.ModelAdmin):
         "first_name",
         "last_name",
         "email",
-        "phone",
         "language_code",
+        "consented_to_updates",
+        "consented_at",
+        "consent_text",
         "created_at",
     ]
 

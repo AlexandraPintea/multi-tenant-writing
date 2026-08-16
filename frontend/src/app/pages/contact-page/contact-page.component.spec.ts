@@ -74,7 +74,10 @@ describe('ContactPageComponent', () => {
         errorEmail: 'Please enter a valid email address.',
         errorSubmit: 'Something went wrong while sending your details.',
         errorThrottled: 'That is a few submissions in a short time.',
+        consent: 'Email me updates.',
+        privacyNote: 'Your details are stored so I can reply.',
       },
+      privacy: { linkText: 'privacy notice' },
     });
     translate.use('en');
 
@@ -118,7 +121,9 @@ describe('ContactPageComponent', () => {
       first_name: 'Ada',
       last_name: 'Lovelace',
       email: 'ada@example.com',
-      phone: '',
+      // Untouched tickbox: no consent, and no wording recorded for one.
+      consented_to_updates: false,
+      consent_text: '',
       url2: '',
     });
 
@@ -127,6 +132,38 @@ describe('ContactPageComponent', () => {
 
     expect(el('form')).toBeNull();
     expect(text()).toContain('Thank you.');
+  });
+
+  it('starts with the updates tickbox unticked', () => {
+    // A pre-ticked box is not consent under the GDPR. This is the assertion
+    // that stops someone "improving" the form by defaulting it to true.
+    expect(el<HTMLInputElement>('input[formControlName="consent"]')?.checked).toBe(false);
+  });
+
+  it('sends consent along with the exact wording that was shown', async () => {
+    await fillValid();
+    el<HTMLInputElement>('input[formControlName="consent"]')!.click();
+    await fixture.whenStable();
+    await submit();
+
+    const request = http.expectOne(URL);
+    expect(request.request.body.consented_to_updates).toBe(true);
+    // The sentence, not just the flag: "they consented" means little without a
+    // record of what they were agreeing to, and the wording is translated.
+    expect(request.request.body.consent_text).toBe('Email me updates.');
+    request.flush({}, { status: 201, statusText: 'Created' });
+  });
+
+  it('accepts the message when consent is refused', async () => {
+    // Withholding consent must not block someone from writing at all —
+    // otherwise agreeing is the price of using the form, and it is not freely
+    // given.
+    await fillValid();
+    await submit();
+
+    const request = http.expectOne(URL);
+    expect(request.request.body.consented_to_updates).toBe(false);
+    request.flush({}, { status: 201, statusText: 'Created' });
   });
 
   it('offers a way back to the form after a successful send', async () => {

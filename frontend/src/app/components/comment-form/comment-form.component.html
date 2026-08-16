@@ -57,5 +57,15 @@
     <button class="btn btn-dark" type="submit" [disabled]="status() === 'submitting'">
       {{ (status() === 'submitting' ? 'comments.submitting' : 'comments.submit') | translate }}
     </button>
+
+    <!--
+      Said at the point of collection, not only in the notice: the name given
+      here is published on the page, which is the one consequence a commenter
+      would not otherwise expect.
+    -->
+    <p class="comment-form__privacy">
+      {{ 'comments.privacyNote' | translate }}
+      <a routerLink="/privacy">{{ 'privacy.linkText' | translate }}</a>
+    </p>
   </form>
 }

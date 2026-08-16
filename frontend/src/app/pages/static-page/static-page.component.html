@@ -1,7 +1,13 @@
 @if (page(); as loaded) {
   <article>
     <h1>{{ loaded.title }}</h1>
-    <div class="body">{{ loaded.content }}</div>
+    <!--
+      Sanitized HTML, like a post body: Django cleans page content against the
+      same allowlist on save (content/sanitize.py), and Angular sanitizes this
+      binding again on render. The privacy notice is the reason — it needs
+      headings, lists and links, not one slab of prose.
+    -->
+    <div class="body" [innerHTML]="loaded.content"></div>
   </article>
 } @else {
   <p>{{ 'common.notFound' | translate }}</p>

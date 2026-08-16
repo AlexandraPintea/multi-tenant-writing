@@ -1,6 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { patchState } from '@ngrx/signals';
 
 import { SiteConfig, SiteConfigStore } from '../../stores/site-config.store';
@@ -38,8 +40,19 @@ describe('SiteFooterComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), SiteConfigStore],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        // The footer now always carries a privacy link, so it needs a router.
+        provideRouter([]),
+        provideTranslateService({ fallbackLang: 'en', lang: 'en' }),
+        SiteConfigStore,
+      ],
     });
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', { nav: { privacy: 'Privacy' } });
+    translate.use('en');
+
     fixture = TestBed.createComponent(SiteFooterComponent);
   });
 
@@ -161,11 +174,16 @@ describe('SiteFooterComponent', () => {
     expect(copyright()).toBe('© Roam Literary Collective');
   });
 
-  it('renders nothing before site-config arrives', async () => {
+  it('still offers the privacy notice before site-config arrives', async () => {
     await fixture.whenStable();
 
-    // No name yet means no copyright to compose, and no links: an empty bordered
-    // strip would flash on every first paint.
-    expect((fixture.nativeElement as HTMLElement).textContent?.trim()).toBe('');
+    // The rest of the footer stays empty until the tenant is known — no name
+    // means no copyright to compose, and no links. The privacy link is the one
+    // thing that does not wait: a notice that appears only once a request has
+    // succeeded is not reliably reachable.
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.site-footer__copyright')).toBeNull();
+    expect(compiled.querySelectorAll('.site-footer__links a').length).toBe(0);
+    expect(compiled.querySelector('.site-footer__privacy')?.getAttribute('href')).toBe('/privacy');
   });
 });

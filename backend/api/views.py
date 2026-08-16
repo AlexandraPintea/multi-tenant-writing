@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.generics import ListAPIView
@@ -199,7 +200,14 @@ class ContactView(APIView):
                 status=status.HTTP_201_CREATED,
             )
 
-        serializer.save(site=request.site, language_code=resolve_lang(request))
+        # Timestamped here, not by the client: a consent record whose date the
+        # sender chose is not a record of anything.
+        consented = serializer.validated_data.get("consented_to_updates", False)
+        serializer.save(
+            site=request.site,
+            language_code=resolve_lang(request),
+            consented_at=timezone.now() if consented else None,
+        )
         return Response(
             {"detail": "Thank you. Your details have been received."},
             status=status.HTTP_201_CREATED,

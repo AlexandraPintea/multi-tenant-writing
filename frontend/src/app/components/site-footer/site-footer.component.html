@@ -1,43 +1,51 @@
-@if (links().length || copyright()) {
-  <div
-    class="site-footer__inner d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
-  >
+<div
+  class="site-footer__inner d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
+>
+  <div class="site-footer__legal d-flex flex-column flex-sm-row align-items-center gap-2 gap-sm-4">
     @if (copyright()) {
       <p class="site-footer__copyright m-0">{{ copyright() }}</p>
     }
+    <!--
+      Always rendered, unlike everything else in this footer. A privacy notice
+      nobody can find is not a notice, and the GDPR expects it to be reachable
+      from wherever data is collected — which, via the footer, is every page.
+    -->
+    <a class="site-footer__privacy link-dark" routerLink="/privacy">
+      {{ 'nav.privacy' | translate }}
+    </a>
+  </div>
 
-    @if (links().length) {
-      <ul class="site-footer__links nav gap-4 m-0 p-0">
-        @for (link of links(); track link.key) {
-          <li class="nav-item">
-            <!-- rel on every one: these all leave the site, and target=_blank
+  @if (links().length) {
+    <ul class="site-footer__links nav gap-4 m-0 p-0">
+      @for (link of links(); track link.key) {
+        <li class="nav-item">
+          <!-- rel on every one: these all leave the site, and target=_blank
                  without noopener hands the opener to the destination. -->
-            <a
-              class="nav-link site-footer__link p-0 link-dark"
-              [href]="link.href"
-              [attr.title]="link.label"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <!-- The icon is decorative because the name sits next to it in
+          <a
+            class="nav-link site-footer__link p-0 link-dark"
+            [href]="link.href"
+            [attr.title]="link.label"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <!-- The icon is decorative because the name sits next to it in
                    visually-hidden text: an aria-label here would give the link
                    two accessible names and read one of them twice. -->
-              <svg
-                class="site-footer__icon"
-                viewBox="0 0 16 16"
-                width="18"
-                height="18"
-                fill="currentColor"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path [attr.d]="link.icon" />
-              </svg>
-              <span class="visually-hidden">{{ link.label }}</span>
-            </a>
-          </li>
-        }
-      </ul>
-    }
-  </div>
-}
+            <svg
+              class="site-footer__icon"
+              viewBox="0 0 16 16"
+              width="18"
+              height="18"
+              fill="currentColor"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path [attr.d]="link.icon" />
+            </svg>
+            <span class="visually-hidden">{{ link.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>
