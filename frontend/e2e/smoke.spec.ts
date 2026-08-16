@@ -4,16 +4,20 @@ import { ALEXANDRA, ROAM } from '../playwright.config';
 
 /**
  * One codebase, two sites. These assert the tenant actually changes what is
- * served — theme, layout and metadata — which no unit test can prove, because
- * the tenant is decided by a header on a real request.
+ * served — theme and metadata — which no unit test can prove, because the
+ * tenant is decided by a header on a real request.
+ *
+ * Layout is no longer among them. These two specs used to load "/" and check
+ * that alexandrapintea.eu rendered app-editorial-layout while roamliterary.com
+ * rendered app-grid-layout. The root now redirects to /writings (see
+ * app.routes.ts), which leaves SiteHomeComponent and both layouts unreachable,
+ * so the assertions were testing a screen the app no longer has. The theme is
+ * checked on the page a reader actually lands on instead — and if the home
+ * route ever comes back, the layout coverage should come back with it.
  */
 
-test('alexandrapintea.eu serves the editorial layout and its own theme', async ({ page }) => {
-  await page.goto(`${ALEXANDRA}/`);
-
-  await expect(page.locator('app-editorial-layout')).toBeVisible();
-  await expect(page.locator('app-grid-layout')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Alexandra Pintea' })).toBeVisible();
+test('alexandrapintea.eu serves its own theme', async ({ page }) => {
+  await page.goto(`${ALEXANDRA}/writings`);
 
   // theme_config is applied as CSS custom properties on <html>.
   const accent = await page.evaluate(() =>
@@ -22,11 +26,8 @@ test('alexandrapintea.eu serves the editorial layout and its own theme', async (
   expect(accent).toBe('#5b3a29');
 });
 
-test('roamliterary.com serves the author grid and its own theme', async ({ page }) => {
-  await page.goto(`${ROAM}/`);
-
-  await expect(page.locator('app-grid-layout')).toBeVisible();
-  await expect(page.locator('app-editorial-layout')).toHaveCount(0);
+test('roamliterary.com serves its own theme', async ({ page }) => {
+  await page.goto(`${ROAM}/writings`);
 
   const accent = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
