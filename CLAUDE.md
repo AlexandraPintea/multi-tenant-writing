@@ -61,7 +61,9 @@ A post that isn't published to *this site* is a different failure and returns a 
 
 ### Settings layout
 
-`config/settings/base.py` + `config/settings/local.py` (which sets `DEBUG=True`, `ALLOWED_HOSTS=["*"]`, and the dev `CORS_ALLOWED_ORIGINS` — 4200 for `ng serve`, 4000 for the SSR dev server). `base.py` trusts **no** CORS origin by default, so production must name the SSR origin explicitly. Settings read from environment via `python-decouple` (`config(...)`) and `dj-database-url`. Both `pytest.ini` and the playbook expect `DJANGO_SETTINGS_MODULE=config.settings.local` in development; there is no `production.py` yet.
+`config/settings/base.py` + `config/settings/local.py` (which sets `DEBUG=True`, `ALLOWED_HOSTS=["*"]`, and the dev `CORS_ALLOWED_ORIGINS` — 4200 for `ng serve`, 4000 for the SSR dev server) + `config/settings/production.py`. Settings read from environment via `python-decouple` (`config(...)`) and `dj-database-url`. Both `pytest.ini` and the playbook expect `DJANGO_SETTINGS_MODULE=config.settings.local` in development.
+
+`production.py` is written for the deployed topology: nginx terminates TLS on the host and proxies to Django over loopback. `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` have **no defaults**, so a server missing either fails at import rather than serving wrongly; `CSRF_TRUSTED_ORIGINS` needs the scheme. `SECURE_PROXY_SSL_HEADER` is the keystone — without it `request.is_secure()` is False behind nginx, `SECURE_SSL_REDIRECT` redirect-loops and the secure cookies are never set. `CACHES` is `DatabaseCache` so the DRF throttle counters are shared across gunicorn workers instead of being per-process (needs `createcachetable` at deploy). `CORS_ALLOWED_ORIGINS` is hard-coded empty, not read from the environment: browser and API share an origin in production, so nothing is cross-origin. `SILENCED_SYSTEM_CHECKS` carries W005 and W021 (HSTS subdomains and preload) as documented refusals, so `check --deploy` comes back clean and a real regression is visible. `tests/test_production_settings.py` imports the module and runs the deployment checks against it — nothing else in the suite loads it.
 
 `MIDDLEWARE` ordering matters: `CorsMiddleware` is high (above `CommonMiddleware`) so CORS headers ride on early responses; `SiteMiddleware` sits after `CommonMiddleware` (which validates `Host` against `ALLOWED_HOSTS`) and after auth, so views see both `request.site` and `request.user`.
 
@@ -100,6 +102,20 @@ python -m black .
 ```
 
 **Dependencies.** Direct dependencies live in `backend/pyproject.toml`, pinned with `~=` (patches float, minors don't) except `ruff` and `black`, which are pinned exactly because a new release changes what "correct" means and would fail CI on untouched code. `requirements.txt` (runtime) and `requirements-dev.txt` (runtime + dev) are **generated lock files** with hashes — CI and the future Docker image install from those, never from `pyproject.toml`. After changing a dependency, regenerate both with the `docker run` command recorded in `pyproject.toml`: they must be compiled **inside Linux**, because `pip-compile` resolves for the platform it runs on and emits no environment markers, so a Windows-generated lock silently pins `tzdata`/`colorama` and would omit any Linux-only dependency.
+
+### Backend image
+
+```powershell
+docker build -t writing-backend ./backend
+```
+
+Multi-stage; the runtime carries the packages but not pip's build machinery, and installs with `--require-hashes` so a re-uploaded PyPI release fails the build instead of shipping. Runs as uid **1000** (`app`) — the host directories bind-mounted over `/app/media` and `/app/staticfiles` must be chowned to that uid or the first upload fails with a permission error. `DJANGO_SETTINGS_MODULE=config.settings.production` is baked in, because `manage.py` only *setdefaults* it and running `local.py` on the server would mean DEBUG on and every Host accepted.
+
+`docker-entrypoint.sh` runs `migrate`, `createcachetable` and `collectstatic`, then `exec`s gunicorn so it is PID 1 and gets SIGTERM directly. It deliberately does **not** run `seed_groups` (which resets two staff accounts to a password committed to this repo) or `seed_demo_data`.
+
+`docker-healthcheck.py` sends the first entry of `ALLOWED_HOSTS` as its Host header and `X-Forwarded-Proto: https`. Both are load-bearing: `localhost` is not an allowed host in production (400 forever), and `SECURE_SSL_REDIRECT` answers plain HTTP with a 301.
+
+Note for the first deploy: `/api/site-config/` **500s when no `Site` row matches** — `request.site` is None and the serializer walks into it. An empty database therefore reports unhealthy until the content is restored.
 
 ### CI
 

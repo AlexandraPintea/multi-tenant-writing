@@ -21,6 +21,9 @@ dependencies = [
     # while nh3 is a binding to ammonia and ships wheels for both linux/amd64
     # (CI, the Docker image) and Windows (this dev machine).
     "nh3~=0.3.2",
+    # The production WSGI server. A runtime dependency rather than a dev one:
+    # it ships inside the image, and CI installing it costs nothing.
+    "gunicorn~=23.0.0",
 ]
 
 [project.optional-dependencies]

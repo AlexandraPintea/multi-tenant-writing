@@ -1,0 +1,17 @@
+# The build context is copied into the image, so anything here is both bloat
+# and, in the case of .env and media, a leak: a secret baked into a layer stays
+# in the image even if a later layer deletes it.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+.env
+.env.*
+
+media/
+staticfiles/
+
+*.log
+*.sqlite3
