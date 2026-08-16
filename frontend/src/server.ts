@@ -25,6 +25,19 @@ const angularApp = new AngularNodeAppEngine();
  */
 
 /**
+ * Container health probe.
+ *
+ * Deliberately not "/": rendering a real page on every check would run the
+ * router and call the API each time, which turns a liveness probe into load
+ * and makes the container unhealthy whenever the *backend* is down. This
+ * answers the narrower question the probe is actually asking — is this process
+ * still serving?
+ */
+app.get('/healthz', (_req, res) => {
+  res.status(200).type('text/plain').send('ok');
+});
+
+/**
  * Serve static files from /browser
  */
 app.use(
