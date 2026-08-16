@@ -3,7 +3,8 @@
     "writings": "Writings",
     "authors": "Authors",
     "about": "About",
-    "contact": "Contact"
+    "contact": "Contact",
+    "privacy": "Privacy"
   },
   "home": {
     "recent": "Recent writing",
@@ -32,8 +33,9 @@
     "firstName": "First name",
     "lastName": "Last name",
     "email": "Email",
-    "phone": "Phone",
     "required": "(required)",
+    "consent": "Yes, email me occasional updates about new writing. I can unsubscribe at any time.",
+    "privacyNote": "Your details are stored so I can reply, and are never shared or sold. See the",
     "submit": "Submit",
     "sending": "Sending…",
     "successTitle": "Thank you.",
@@ -58,6 +60,7 @@
     "submitting": "Sending…",
     "success": "Thank you. Your comment will appear once it has been read.",
     "errorThrottled": "That is a few comments in a short time. Please try again later.",
+    "privacyNote": "The name you give is published with your comment. See the",
     "errorGeneric": "Your comment could not be sent. Please try again."
   },
   "toggle": {
@@ -67,6 +70,9 @@
   "language": {
     "en": "English",
     "ro": "Romanian"
+  },
+  "privacy": {
+    "linkText": "privacy notice"
   },
   "common": {
     "nothingYet": "Nothing here yet.",

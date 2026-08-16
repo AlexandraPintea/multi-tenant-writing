@@ -161,8 +161,14 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 class ContactMessageCreateSerializer(serializers.ModelSerializer):
     """A contact-page submission. Write-only; nothing here is ever read back.
 
-    `site`, `language_code` and `is_handled` are absent by design — they come
-    from the request, not the payload.
+    `site`, `language_code`, `consented_at` and `is_handled` are absent by
+    design — they come from the request, not the payload.
+
+    `consent_text` is accepted from the client, which looks wrong until you
+    consider what it is for: it records the sentence the reader actually saw
+    next to the tickbox, in their language. The server cannot know which
+    wording was on screen. It is evidence of what was agreed, never a
+    permission — `consented_to_updates` is the flag that decides anything.
     """
 
     # Same trap as the comment form: a field no reader can see, filled in only
@@ -171,11 +177,19 @@ class ContactMessageCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContactMessage
-        fields = ["first_name", "last_name", "email", "phone", "url2"]
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "consented_to_updates",
+            "consent_text",
+            "url2",
+        ]
         extra_kwargs = {
             "first_name": {"allow_blank": False},
             "last_name": {"allow_blank": False},
-            "phone": {"required": False},
+            "consented_to_updates": {"required": False},
+            "consent_text": {"required": False},
         }
 
     def validate_first_name(self, value):

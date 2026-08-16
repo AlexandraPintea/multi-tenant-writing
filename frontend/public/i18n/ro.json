@@ -3,7 +3,8 @@
     "writings": "Texte",
     "authors": "Autori",
     "about": "Despre",
-    "contact": "Contact"
+    "contact": "Contact",
+    "privacy": "Confidențialitate"
   },
   "home": {
     "recent": "Texte recente",
@@ -32,8 +33,9 @@
     "firstName": "Prenume",
     "lastName": "Nume de familie",
     "email": "Email",
-    "phone": "Telefon",
     "required": "(obligatoriu)",
+    "consent": "Da, trimite-mi din când în când vești despre texte noi. Mă pot dezabona oricând.",
+    "privacyNote": "Datele tale sunt păstrate ca să îți pot răspunde și nu sunt niciodată vândute sau împărtășite. Vezi",
     "submit": "Trimite",
     "sending": "Se trimite…",
     "successTitle": "Mulțumesc.",
@@ -58,6 +60,7 @@
     "submitting": "Se trimite…",
     "success": "Mulțumesc. Comentariul tău va apărea după ce este citit.",
     "errorThrottled": "Sunt cam multe comentarii într-un timp scurt. Încearcă mai târziu.",
+    "privacyNote": "Numele pe care îl scrii apare public alături de comentariu. Vezi",
     "errorGeneric": "Comentariul nu a putut fi trimis. Te rog încearcă din nou."
   },
   "toggle": {
@@ -67,6 +70,9 @@
   "language": {
     "en": "engleză",
     "ro": "română"
+  },
+  "privacy": {
+    "linkText": "nota de confidențialitate"
   },
   "common": {
     "nothingYet": "Încă nimic aici.",

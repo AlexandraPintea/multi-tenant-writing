@@ -10,13 +10,14 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { environment } from '../../../environments/environment';
 import { SeoService } from '../../core/seo';
 
 type SubmitStatus = 'idle' | 'sending' | 'success' | 'error';
-type ContactField = 'firstName' | 'lastName' | 'email' | 'phone';
+type ContactField = 'firstName' | 'lastName' | 'email';
 
 /**
  * The contact page: a reader leaving their details.
@@ -31,7 +32,7 @@ type ContactField = 'firstName' | 'lastName' | 'email' | 'phone';
  */
 @Component({
   selector: 'app-contact-page',
-  imports: [ReactiveFormsModule, TranslatePipe],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './contact-page.component.html',
   styleUrl: './contact-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,7 +53,10 @@ export class ContactPageComponent {
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
-    phone: ['', [Validators.maxLength(40)]],
+    // Unticked by default and never required: a pre-ticked box is not consent
+    // under the GDPR, and refusing to accept the message without it would make
+    // the "consent" a condition of contacting at all.
+    consent: [false],
     // The honeypot, as on the comment form: no reader sees it, and anything
     // that fills in every input it finds gets a polite 201 and no row.
     url2: [''],
@@ -116,14 +120,19 @@ export class ContactPageComponent {
     this.status.set('sending');
     this.submitError.set(null);
 
-    const { firstName, lastName, email, phone, url2 } = this.form.getRawValue();
+    const { firstName, lastName, email, consent, url2 } = this.form.getRawValue();
     // snake_case on the wire, like every other payload in this API.
     this.http
       .post(`${environment.API_BASE_URL}/contact/`, {
         first_name: firstName,
         last_name: lastName,
         email,
-        phone,
+        consented_to_updates: consent,
+        // The exact sentence shown beside the tickbox, in the reader's own
+        // language. Consent is worth little as a bare boolean: the record has
+        // to say what was agreed to, and the server cannot know which wording
+        // was on screen.
+        consent_text: consent ? this.translate.instant('contact.consent') : '',
         url2,
       })
       .subscribe({

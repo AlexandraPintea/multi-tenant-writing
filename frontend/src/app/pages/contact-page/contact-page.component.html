@@ -74,10 +74,22 @@
           }
         </div>
 
-        <div class="contact-form__field">
-          <label class="contact-form__label" for="phone">{{ 'contact.phone' | translate }}</label>
-          <input id="phone" type="tel" autocomplete="tel" formControlName="phone" />
+        <!--
+          Unticked, optional, and its own decision — a pre-ticked box is not
+          consent, and refusing the message without it would make agreeing the
+          price of writing to her at all.
+        -->
+        <div class="contact-form__consent">
+          <label class="contact-form__checkbox">
+            <input type="checkbox" formControlName="consent" />
+            <span>{{ 'contact.consent' | translate }}</span>
+          </label>
         </div>
+
+        <p class="contact-form__privacy">
+          {{ 'contact.privacyNote' | translate }}
+          <a routerLink="/privacy">{{ 'privacy.linkText' | translate }}</a>
+        </p>
 
         <!-- Honeypot: off-screen, out of the tab order, hidden from assistive tech. -->
         <div class="contact-form__trap" aria-hidden="true">

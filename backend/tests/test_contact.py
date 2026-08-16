@@ -42,9 +42,31 @@ class TestSubmitting:
         assert message.email == "ada@example.com"
         assert message.is_handled is False
 
-    def test_phone_is_optional(self, client, alex_site):
-        assert send(client).status_code == 201
-        assert ContactMessage.objects.get().phone == ""
+    def test_consent_is_off_unless_it_is_asked_for(self, client, alex_site):
+        # Silence is not consent: a submission that says nothing about updates
+        # must not become permission to email someone.
+        send(client)
+
+        message = ContactMessage.objects.get()
+        assert message.consented_to_updates is False
+        assert message.consented_at is None
+
+    def test_consent_is_recorded_with_its_wording_and_a_server_timestamp(
+        self, client, alex_site
+    ):
+        wording = "Yes, email me occasional updates about new writing."
+        send(client, consented_to_updates=True, consent_text=wording)
+
+        message = ContactMessage.objects.get()
+        assert message.consented_to_updates is True
+        assert message.consent_text == wording
+        # Stamped by the server: a date the sender chose is not evidence.
+        assert message.consented_at is not None
+
+    def test_no_timestamp_when_consent_was_not_given(self, client, alex_site):
+        send(client, consented_to_updates=False, consent_text="ignored")
+
+        assert ContactMessage.objects.get().consented_at is None
 
     def test_a_message_belongs_to_the_site_it_was_sent_from(
         self, client, alex_site, roam_site
@@ -85,7 +107,6 @@ class TestValidation:
             ({"email": ""}, "email"),
             ({"email": "not-an-email"}, "email"),
             ({"first_name": "A" * 101}, "first_name"),
-            ({"phone": "0" * 41}, "phone"),
         ],
     )
     def test_bad_submissions_name_the_offending_field(

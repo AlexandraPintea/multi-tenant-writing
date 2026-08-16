@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 
 import { environment } from '../../../environments/environment';
@@ -40,6 +41,8 @@ describe('CommentFormComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        // The form links to the privacy notice, so it needs a router.
+        provideRouter([]),
         provideTranslateService({ fallbackLang: 'en', lang: 'en' }),
       ],
     });
@@ -57,7 +60,9 @@ describe('CommentFormComponent', () => {
         success: 'Thank you. Your comment will appear once it has been read.',
         errorThrottled: 'That is a few comments in a short time.',
         errorGeneric: 'Your comment could not be sent.',
+        privacyNote: 'The name you give is published with your comment.',
       },
+      privacy: { linkText: 'privacy notice' },
     });
     translate.use('en');
 

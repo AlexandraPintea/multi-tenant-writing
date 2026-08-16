@@ -65,6 +65,16 @@ export const routes: Routes = [
       import('./pages/static-page/static-page.component').then((m) => m.StaticPageComponent),
   },
   {
+    // Admin-editable like /about, and deliberately so: a privacy notice has to
+    // change the day what the site does with data changes, which should not
+    // wait for a deploy.
+    path: 'privacy',
+    data: { pageSlug: 'privacy' },
+    resolve: { page: pageResolver },
+    loadComponent: () =>
+      import('./pages/static-page/static-page.component').then((m) => m.StaticPageComponent),
+  },
+  {
     // Its own component, not StaticPageComponent: this page has a form and an
     // HTTP call, where /about only renders admin-written prose. No resolver
     // either — there is nothing to fetch before rendering it.
