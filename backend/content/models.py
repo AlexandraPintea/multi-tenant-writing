@@ -1,10 +1,17 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from parler.models import TranslatableModel, TranslatedFields
 
 from .sanitize import clean_body
+
+# How a reader's archive is ordered, everywhere. `nulls_first` is Postgres's own
+# behaviour on DESC, written down rather than inherited; `-id` is the tie-break
+# Meta.ordering lacks, without which two posts sharing a timestamp have no
+# defined order and adjacency becomes a coin toss.
+VISIBLE_ORDER = (F("published_at").desc(nulls_first=True), "-id")
 
 
 class Category(TranslatableModel):
@@ -153,6 +160,47 @@ class Post(TranslatableModel):
             if author.site_id == site.id:
                 return author
         return None
+
+    @classmethod
+    def visible_on(cls, site, lang):
+        """The archive a reader of ``lang`` sees on ``site``, newest first.
+
+        The same three filters the list endpoint applies, in one place, because
+        "the next post" has to mean "the next one in the list you are reading" —
+        and the two drifting apart is the bug that would be hardest to notice.
+        """
+        return (
+            cls.objects.filter(
+                sites=site,
+                is_published=True,
+                translations__language_code=lang,
+            )
+            .distinct()
+            .order_by(*VISIBLE_ORDER)
+        )
+
+    def next_post_for(self, site, lang):
+        """The next piece down the archive — the older one — or None.
+
+        Adjacency belongs to (post, site, language), not to the post: a
+        cross-posted piece has different neighbours on each domain, and a post
+        with no translation in this language is not in this archive at all.
+        """
+        if self.published_at is None:
+            # Undated posts sort first, so everything dated is below them; among
+            # themselves they fall back to id order.
+            older = Q(published_at__isnull=True, id__lt=self.id) | Q(
+                published_at__isnull=False
+            )
+        else:
+            # The id half is not decoration: Meta.ordering has no tie-break, so
+            # without it two posts sharing a timestamp would each skip or repeat
+            # the other depending on which way the database felt.
+            older = Q(published_at__lt=self.published_at) | Q(
+                published_at=self.published_at, id__lt=self.id
+            )
+
+        return self.visible_on(site, lang).exclude(pk=self.pk).filter(older).first()
 
 
 # Parler keeps translated fields on a sibling model, so the hook belongs there:

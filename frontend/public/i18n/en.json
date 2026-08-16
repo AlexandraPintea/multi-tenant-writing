@@ -21,7 +21,9 @@
   },
   "post": {
     "notInLanguage": "This piece is only available in {{languages}}.",
-    "readIn": "Read it in {{language}}"
+    "readIn": "Read it in {{language}}",
+    "older": "Older",
+    "olderLabel": "Older post"
   },
   "toggle": {
     "label": "Language",

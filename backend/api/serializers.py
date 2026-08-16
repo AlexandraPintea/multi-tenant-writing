@@ -111,9 +111,27 @@ class PostListSerializer(_TranslatedMixin, serializers.Serializer):
 
 class PostDetailSerializer(PostListSerializer):
     body = serializers.SerializerMethodField()
+    next_post = serializers.SerializerMethodField()
 
     def get_body(self, obj):
         return self._t(obj, "body")
+
+    def get_next_post(self, obj):
+        """The older neighbour, or null on the oldest post.
+
+        Embedded rather than given its own endpoint: SSR waits on whatever the
+        resolver dispatches, so a second request would sit on the critical path
+        of a page that already has everything else it needs. It also rides the
+        existing per-(slug, language) cache for free.
+
+        Declared here and not on PostListSerializer on purpose — that one is
+        reused for the author page's post list, where an adjacency query per row
+        would be N+1 for a link nobody renders.
+        """
+        neighbour = obj.next_post_for(self.context["site"], self._lang())
+        if neighbour is None:
+            return None
+        return {"slug": neighbour.slug, "title": self._t(neighbour, "title")}
 
 
 class AuthorSerializer(_TranslatedMixin, serializers.Serializer):

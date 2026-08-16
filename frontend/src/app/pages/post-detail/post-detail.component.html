@@ -34,6 +34,9 @@
       </a>
     </footer>
   </article>
+
+  <!-- Outside <article>: navigation to the next piece is not part of this one. -->
+  <app-next-post-link [next]="loaded.next_post ?? null" />
 } @else if (notInLanguage()) {
   <section class="unavailable">
     <p>

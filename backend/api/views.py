@@ -64,17 +64,11 @@ class PostListView(ListAPIView):
 
     def get_queryset(self):
         lang = resolve_lang(self.request)
-        # Only posts that actually have a translation in the active language
-        # appear in that language's archive (§4.3 list-filtering rule).
-        return (
-            Post.objects.filter(
-                sites=self.request.site,
-                is_published=True,
-                translations__language_code=lang,
-            )
-            .prefetch_related("translations", "authors__site")
-            .distinct()
-            .order_by("-published_at")
+        # Post.visible_on carries the §4.3 list-filtering rule — only posts with
+        # a translation in the active language — and the ordering. Shared with
+        # next_post_for so the archive and its "next" link cannot disagree.
+        return Post.visible_on(self.request.site, lang).prefetch_related(
+            "translations", "authors__site"
         )
 
     def get_serializer_context(self):

@@ -1,0 +1,8 @@
+@if (next(); as older) {
+  <nav class="next-post" [attr.aria-label]="'post.olderLabel' | translate">
+    <a class="next-post__link" [routerLink]="['/writings', older.slug]">
+      <span class="next-post__label">{{ 'post.older' | translate }}</span>
+      <span class="next-post__title">{{ older.title }}</span>
+    </a>
+  </nav>
+}

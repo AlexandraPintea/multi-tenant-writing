@@ -21,7 +21,9 @@
   },
   "post": {
     "notInLanguage": "Acest text este disponibil doar în {{languages}}.",
-    "readIn": "Citește în {{language}}"
+    "readIn": "Citește în {{language}}",
+    "older": "Mai vechi",
+    "olderLabel": "Textul anterior"
   },
   "toggle": {
     "label": "Limbă",
