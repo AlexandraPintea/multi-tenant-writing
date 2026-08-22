@@ -28,6 +28,10 @@ class PostAdminForm(TranslatableModelForm):
     def clean(self):
         cleaned_data = super().clean()
         sites = cleaned_data.get("sites")
+
+        if sites is not None:
+            self._check_publishable(cleaned_data, sites)
+
         authors = cleaned_data.get("authors")
         if sites is None or authors is None:
             return cleaned_data
@@ -59,6 +63,32 @@ class PostAdminForm(TranslatableModelForm):
             seen_sites.add(author.site_id)
         return cleaned_data
 
+    def _check_publishable(self, cleaned_data, sites):
+        """The §4.3 publishing rule, for the language tab being edited.
+
+        Publication lives on the translation now, so this form only ever sees
+        one language's flag — `self.language_code`, whichever tab is open. That
+        is enough: Post.clean() re-checks the copies already in the database,
+        and the one about to join them is the one in front of us.
+
+        A blank title or body needs no check here. Both are required model
+        fields, so the field-level validation has already rejected them (and
+        Django strips whitespace, so a body of spaces counts as blank) before
+        this method is reached.
+        """
+        if not cleaned_data.get("is_published"):
+            return
+
+        language = self.language_code
+        enabled = {lang for site in sites for lang in site.enabled_languages}
+        if language not in enabled:
+            self.add_error(
+                "is_published",
+                f"No site this post publishes to enables {language} "
+                f"({sorted(enabled) or 'no sites selected'}), so nobody would "
+                "be able to read that copy.",
+            )
+
 
 @admin.register(Post)
 class PostAdmin(SiteScopedAdmin, TranslatableAdmin):
@@ -77,7 +107,7 @@ class PostAdmin(SiteScopedAdmin, TranslatableAdmin):
         "safe_title",
         "author_names",
         "category",
-        "is_published",
+        "published_in",
         "published_at",
     ]
     # RelatedOnlyFieldListFilter, not a bare "category": the default filter
@@ -85,7 +115,10 @@ class PostAdmin(SiteScopedAdmin, TranslatableAdmin):
     # labels in a Roam editor's sidebar. The related-only variant builds its
     # choices from model_admin.get_queryset(request), which is already scoped.
     list_filter = [
-        "is_published",
+        # Across the translations join, because that is where publication lives
+        # now. Django adds its own DISTINCT for a to-many lookup, so a post
+        # published in both languages still appears once.
+        "translations__is_published",
         "sites",
         ("category", admin.RelatedOnlyFieldListFilter),
     ]
@@ -95,7 +128,9 @@ class PostAdmin(SiteScopedAdmin, TranslatableAdmin):
         return (
             super()
             .get_queryset(request)
-            .prefetch_related("authors__site")
+            # translations: the "Published in" column reads every copy's flag,
+            # which without this is one query per row.
+            .prefetch_related("authors__site", "translations")
             .select_related("category")
         )
 
@@ -128,6 +163,16 @@ class PostAdmin(SiteScopedAdmin, TranslatableAdmin):
         return obj.safe_translation_getter("title", any_language=True) or obj.slug
 
     safe_title.short_description = "Title"
+
+    @admin.display(description="Published in")
+    def published_in(self, obj):
+        """Which languages are live, since one boolean no longer says it.
+
+        The column a checkbox used to be: "EN" means the English copy is out and
+        the Romanian one is still being written, which is the state this whole
+        change exists to allow.
+        """
+        return ", ".join(lang.upper() for lang in obj.published_languages()) or "—"
 
     def author_names(self, obj):
         return (

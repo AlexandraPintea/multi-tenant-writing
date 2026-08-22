@@ -124,14 +124,19 @@ def roam_essay(roam_site):
 
 
 def _make_post(slug, translations, sites, authors, category=None, published=True):
+    """Build a post. `published` applies to every language given.
+
+    Publication lives on the translation, so a test that wants one language live
+    and another still a draft passes "published" in that language's own dict.
+    """
     post = Post.objects.create(
         slug=slug,
-        is_published=published,
         published_at=timezone.now(),
         category=category,
     )
     for language, fields in translations.items():
         post.set_current_language(language)
+        post.is_published = fields.get("published", published)
         post.title = fields["title"]
         post.body = fields["body"]
         post.excerpt = fields.get("excerpt", "")
@@ -170,6 +175,28 @@ def english_only_post(alex_site, alex_author, alex_notes):
         authors=[alex_author],
         category=alex_notes,
     )
+
+
+@pytest.fixture
+def unpublish():
+    """Take a post's copies out of print — named languages, or all of them.
+
+    A fixture rather than three lines at each call site because the obvious
+    three lines are a trap: `post.is_published = False` writes to whatever
+    language happens to be current, which after a fixture is built is the last
+    one it touched. A test that means "this post is a draft" has to say so for
+    every language, and one that means "the Romanian copy is a draft" has to
+    name it.
+    """
+
+    def _unpublish(post, *languages):
+        for language in languages or post.get_available_languages():
+            post.set_current_language(language)
+            post.is_published = False
+        post.save()
+        return post
+
+    return _unpublish
 
 
 @pytest.fixture

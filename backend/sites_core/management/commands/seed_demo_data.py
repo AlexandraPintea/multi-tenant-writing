@@ -128,12 +128,12 @@ class Command(BaseCommand):
         # Bilingual post published on both sites
         bilingual, _ = Post.objects.get_or_create(
             slug="the-power-of-words",
-            defaults={
-                "published_at": timezone.now(),
-                "is_published": True,
-            },
+            defaults={"published_at": timezone.now()},
         )
+        # Publication is per language, so it is set per language — on the
+        # translation, next to the title and body it governs.
         bilingual.set_current_language("en")
+        bilingual.is_published = True
         bilingual.title = "The Power of Words"
         bilingual.body = (
             "Words have the power to shape worlds, build bridges, and break walls."
@@ -143,6 +143,7 @@ class Command(BaseCommand):
         )
         bilingual.save()
         bilingual.set_current_language("ro")
+        bilingual.is_published = True
         bilingual.title = "Puterea Cuvintelor"
         bilingual.body = (
             "Cuvintele au puterea de a modela lumi, "
@@ -165,12 +166,10 @@ class Command(BaseCommand):
         # English-only post published only on alexandrapintea.eu
         en_only, _ = Post.objects.get_or_create(
             slug="writing-in-the-margins",
-            defaults={
-                "published_at": timezone.now(),
-                "is_published": True,
-            },
+            defaults={"published_at": timezone.now()},
         )
         en_only.set_current_language("en")
+        en_only.is_published = True
         en_only.title = "Writing in the Margins"
         en_only.body = (
             "There is something sacred about the notes "

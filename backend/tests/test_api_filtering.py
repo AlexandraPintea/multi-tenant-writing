@@ -75,10 +75,26 @@ def test_post_list_is_scoped_to_the_site(client, bilingual_post, english_only_po
 
 
 @pytest.mark.django_db
-def test_unpublished_posts_are_never_listed(client, bilingual_post):
-    bilingual_post.is_published = False
-    bilingual_post.save()
+def test_unpublished_posts_are_never_listed(client, bilingual_post, unpublish):
+    unpublish(bilingual_post)
     assert slugs(client.get("/api/posts/", headers=ALEX)) == []
+
+
+@pytest.mark.django_db
+def test_a_language_still_in_draft_drops_out_of_that_archive_only(
+    client, bilingual_post, unpublish
+):
+    """The whole point of the per-language flag.
+
+    The Romanian copy goes back to being written; the English archive does not
+    notice, and the Romanian one loses the piece until it is ready.
+    """
+    unpublish(bilingual_post, "ro")
+
+    assert slugs(client.get("/api/posts/?lang=en", headers=ALEX)) == [
+        "the-power-of-words"
+    ]
+    assert slugs(client.get("/api/posts/?lang=ro", headers=ALEX)) == []
 
 
 @pytest.mark.django_db

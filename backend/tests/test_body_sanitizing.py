@@ -110,7 +110,7 @@ class TestCleanBody:
 @pytest.mark.django_db
 class TestSanitizingIsWired:
     def test_a_body_saved_through_the_model_is_cleaned(self, alex_site):
-        post = Post.objects.create(slug="wired", is_published=False)
+        post = Post.objects.create(slug="wired")
         post.sites.set([alex_site])
         post.set_current_language("en")
         post.title = "Wired"
@@ -125,7 +125,7 @@ class TestSanitizingIsWired:
     def test_every_language_of_one_save_is_cleaned(self, alex_site):
         # parler writes each cached translation on save; a hook that only saw
         # the "current" language would clean one and store the other verbatim.
-        post = Post.objects.create(slug="wired-bilingual", is_published=False)
+        post = Post.objects.create(slug="wired-bilingual")
         post.sites.set([alex_site])
         for language, body in (
             ("en", "<b>en</b><script>x</script>"),

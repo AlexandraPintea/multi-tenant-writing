@@ -116,9 +116,10 @@ class TestScoping:
         assert response.status_code == 404
         assert Comment.objects.count() == 0
 
-    def test_cannot_comment_on_an_unpublished_post(self, client, bilingual_post):
-        bilingual_post.is_published = False
-        bilingual_post.save()
+    def test_cannot_comment_on_an_unpublished_post(
+        self, client, bilingual_post, unpublish
+    ):
+        unpublish(bilingual_post)
 
         assert submit(client).status_code == 404
         assert Comment.objects.count() == 0

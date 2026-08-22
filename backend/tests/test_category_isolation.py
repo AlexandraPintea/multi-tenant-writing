@@ -78,7 +78,7 @@ def test_category_dropdown_narrows_to_the_posts_own_sites(
     should not be offered alexandrapintea categories."""
     from content.models import Post
 
-    roam_only = Post.objects.create(slug="roam-only", is_published=False)
+    roam_only = Post.objects.create(slug="roam-only")
     roam_only.sites.set([roam_essay.site])
 
     response = superuser_client.get(f"/admin/content/post/{roam_only.pk}/change/")

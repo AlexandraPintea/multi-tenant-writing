@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -89,19 +90,26 @@ class PostListView(ListAPIView):
 
 class PostDetailView(APIView):
     def get(self, request, slug):
-        # 1. Site/publication scope: a post not published to this site is a
-        #    plain 404 (DRF's get_object_or_404 -> standard {"detail": ...}).
+        # 1. Site scope: a post not on this site at all is a plain 404 (DRF's
+        #    get_object_or_404 -> standard {"detail": ...}).
         post = get_object_or_404(
             Post.objects.prefetch_related("translations", "authors__site"),
             slug=slug,
             sites=request.site,
-            is_published=True,
         )
-        # 2. Language coverage: the post exists here but not in this language.
+        # 2. Publication scope, which is per language now. A post with nothing
+        #    published is a draft, and a draft answers exactly as if it did not
+        #    exist: naming its languages would tell a stranger what is being
+        #    written here.
+        published = post.published_languages()
+        if not published:
+            raise Http404
+        # 3. Language coverage: published here, but not in this language. This
+        #    is the shape the frontend reads to dim the toggle, so it now covers
+        #    "the Romanian copy is still a draft" as well as "there is none".
         lang = resolve_lang(request)
-        available = sorted(post.get_available_languages())
-        if lang not in available:
-            raise PostNotAvailableInLanguage(available_languages=available)
+        if lang not in published:
+            raise PostNotAvailableInLanguage(available_languages=published)
 
         return Response(
             PostDetailSerializer(
@@ -140,12 +148,10 @@ class PostCommentsView(APIView):
         return [ScopedRateThrottle()]
 
     def post(self, request, slug):
-        post = get_object_or_404(
-            Post,
-            slug=slug,
-            sites=request.site,
-            is_published=True,
-        )
+        # Any published copy is enough to take comments: the thread is shared
+        # across languages, so which one the reader was reading does not decide
+        # whether the thread is open.
+        post = get_object_or_404(Post.published_on(request.site), slug=slug)
 
         serializer = CommentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -262,13 +268,16 @@ class AuthorDetailView(APIView):
             site=request.site,
         )
         lang = resolve_lang(request)
-        # `posts` is the reverse of Post.authors, so this now returns the
-        # cross-posted pieces this site's profile is attached to as well.
+        # Post.visible_on rather than a filter written out here: publication is
+        # per language now, and "published" on its own no longer says whether
+        # this reader can read it. Filtering by author afterwards keeps the
+        # archive's own definition of visible, including its ordering, so an
+        # author page cannot list a piece the writings list omits. It also picks
+        # up the cross-posted pieces — `posts` is the reverse of Post.authors.
         author_posts = (
-            author.posts.filter(sites=request.site, is_published=True)
+            Post.visible_on(request.site, lang)
+            .filter(authors=author)
             .prefetch_related("translations", "authors__site")
-            .distinct()
-            .order_by("-published_at")
         )
         data = AuthorDetailSerializer(
             author,
