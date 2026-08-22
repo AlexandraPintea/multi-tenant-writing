@@ -122,6 +122,38 @@ class TestSanitizingIsWired:
         assert "script" not in stored.body
         assert "<p>ok</p>" in stored.body
 
+    def test_an_excerpt_is_cleaned_the_same_way_a_body_is(self, alex_site):
+        # The excerpt is markup too, and the card renders it with innerHTML.
+        # A sanitizer wired to one of the two columns is the failure mode this
+        # test exists to prevent.
+        post = Post.objects.create(slug="wired-excerpt")
+        post.sites.set([alex_site])
+        post.set_current_language("en")
+        post.title = "Wired"
+        post.body = "Body."
+        post.excerpt = "<em>A teaser</em><script>alert(1)</script>"
+        post.save()
+
+        stored = Post.objects.get(pk=post.pk)
+        stored.set_current_language("en")
+        assert "script" not in stored.excerpt
+        assert "<em>A teaser</em>" in stored.excerpt
+
+    def test_a_plain_text_excerpt_becomes_a_paragraph(self, alex_site):
+        # Same treatment as a body, so the column is uniform and the card needs
+        # no "is this one of the old plain-text ones?" branch.
+        post = Post.objects.create(slug="plain-excerpt")
+        post.sites.set([alex_site])
+        post.set_current_language("en")
+        post.title = "Plain"
+        post.body = "Body."
+        post.excerpt = "A quiet teaser."
+        post.save()
+
+        stored = Post.objects.get(pk=post.pk)
+        stored.set_current_language("en")
+        assert stored.excerpt == "<p>A quiet teaser.</p>"
+
     def test_every_language_of_one_save_is_cleaned(self, alex_site):
         # parler writes each cached translation on save; a hook that only saw
         # the "current" language would clean one and store the other verbatim.

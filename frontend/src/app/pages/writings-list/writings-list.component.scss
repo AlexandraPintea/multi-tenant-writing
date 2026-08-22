@@ -124,12 +124,21 @@
   /* Measured 2rem, which falls between Bootstrap's mb-4 (1.5rem) and mb-5 (3rem). */
   margin-bottom: 2rem;
 
-  /* No Bootstrap utility for line clamping. */
+  /* No Bootstrap utility for line clamping. The excerpt is author-written HTML
+     now, so what is being clamped is a <p> inside this box rather than bare
+     text — the three-line cap still holds, but an excerpt written as several
+     paragraphs is clamped across all of them, not three lines each. */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   line-clamp: 3;
   overflow: hidden;
+
+  /* Reboot gives that <p> a bottom margin of its own, which would stack with
+     the 2rem above. Spacing between the card's parts belongs to the card. */
+  > :last-child {
+    margin-bottom: 0;
+  }
 }
 
 /* ---------- the single breakpoint the reference uses (767/768px) ---------- */

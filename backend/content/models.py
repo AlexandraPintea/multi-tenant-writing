@@ -251,8 +251,8 @@ PostTranslation = Post._parler_meta.root_model
 
 
 @receiver(pre_save, sender=PostTranslation)
-def _sanitize_post_body(sender, instance, raw=False, **kwargs):
-    """Clean the body on every write, not just the ones through the admin form.
+def _sanitize_post_translation(sender, instance, raw=False, **kwargs):
+    """Clean the markup columns on every write, not just the admin form's.
 
     A form's clean_body() would be the obvious home and would be wrong: it only
     ever sees the one language tab being edited, and it would leave the seeder,
@@ -260,11 +260,17 @@ def _sanitize_post_body(sender, instance, raw=False, **kwargs):
     the API serves. "What is stored is safe" has to be a property of the column,
     not of one code path.
 
+    The excerpt goes through the same allowlist as the body, because it is the
+    same kind of thing — prose the author writes and the reading page renders
+    with innerHTML. Sharing the sanitizer also means there is one answer to
+    "which tags are allowed?" rather than one per field.
+
     `raw` is loaddata replaying a fixture verbatim — rewriting rows mid-load
     would leave the fixture and the database disagreeing about their contents.
     """
     if not raw:
         instance.body = clean_body(instance.body)
+        instance.excerpt = clean_body(instance.excerpt)
 
 
 class Comment(models.Model):

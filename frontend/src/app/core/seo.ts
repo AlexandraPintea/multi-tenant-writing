@@ -6,11 +6,20 @@ import { Router } from '@angular/router';
 import { LanguageStore } from '../stores/language.store';
 import { SiteConfigStore } from '../stores/site-config.store';
 import { mediaUrl } from './media';
+import { plainText } from './plain-text';
 import { resolveSiteOrigin } from './site-domain';
+
+/** Meta descriptions past roughly this length are truncated in results anyway. */
+const DESCRIPTION_LENGTH = 200;
 
 export interface PageSeo {
   /** Page-specific title. The site name is appended, except on the home page. */
   title: string;
+  /**
+   * Pass the source prose as it is — an excerpt or a page's content, markup and
+   * all. It is stripped to plain text and shortened here, because that is true
+   * of every description regardless of which page supplied it.
+   */
   description?: string;
   /** Absolute or root-relative; made absolute here. */
   image?: string | null;
@@ -50,7 +59,7 @@ export class SeoService {
       siteName && page.title ? `${page.title} · ${siteName}` : page.title || siteName;
     const url = this.absolute(page.path ?? this.router.url.split('?')[0]);
     const image = this.absolute(page.image ?? undefined);
-    const description = page.description?.trim() ?? '';
+    const description = plainText(page.description, DESCRIPTION_LENGTH);
 
     this.title.setTitle(fullTitle);
     this.setName('description', description);

@@ -55,7 +55,15 @@
         <a class="link-dark" [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
       </h2>
 
-      <p class="preview__excerpt">{{ post.excerpt }}</p>
+      <!--
+        A div, not a p: the excerpt is author-written HTML now and arrives with
+        its own block tags, which cannot legally nest inside a paragraph.
+        innerHTML for the same reason the post body uses it, and it is safe for
+        the same reason — Django sanitizes the column against an allowlist on
+        every write, and Angular sanitizes again here.
+        bypassSecurityTrustHtml must never appear here.
+      -->
+      <div class="preview__excerpt" [innerHTML]="post.excerpt"></div>
 
       <a
         class="link-dark text-decoration-underline link-offset-2"
