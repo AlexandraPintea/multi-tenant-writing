@@ -35,6 +35,13 @@
     </footer>
   </article>
 
+  <!--
+    Outside <article> for the same reason the comments are: passing a piece on
+    is not part of the piece. Given the slug rather than the current URL so the
+    shared link is the canonical one, without ?lang= or #comments attached.
+  -->
+  <app-share-buttons [slug]="loaded.slug" [title]="loaded.title" />
+
   <!-- Outside <article>: the conversation about a piece is not the piece. -->
   <section class="comments" id="comments">
     <h2 class="comments__title">{{ 'comments.title' | translate }}</h2>

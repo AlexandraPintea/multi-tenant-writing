@@ -13,6 +13,7 @@ import {
 import { CommentFormComponent } from '../../components/comment-form/comment-form.component';
 import { CommentListComponent } from '../../components/comment-list/comment-list.component';
 import { NextPostLinkComponent } from '../../components/next-post-link/next-post-link.component';
+import { ShareButtonsComponent } from '../../components/share-buttons/share-buttons.component';
 import { SeoService } from '../../core/seo';
 import { LoadPostDetail } from '../../stores/content/content.actions';
 import { LanguageStore } from '../../stores/language.store';
@@ -33,6 +34,7 @@ import { LanguageStore } from '../../stores/language.store';
     TranslatePipe,
     DatePipe,
     NextPostLinkComponent,
+    ShareButtonsComponent,
     CommentListComponent,
     CommentFormComponent,
   ],

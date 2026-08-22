@@ -1,0 +1,65 @@
+:host {
+  display: block;
+  // The post's own gutter comes from post-detail; this only needs to sit clear
+  // of the signature above it and the comments below.
+  margin-block: 3rem;
+}
+
+.share__heading {
+  // Not a display heading: it labels a control, and at h2 size it would compete
+  // with "Comments" further down the page for the reader's attention.
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.share__list {
+  list-style: none;
+}
+
+.share__button {
+  // Same target sizing as the footer's icon links: an 18px glyph on its own is
+  // under the 24px minimum for a touch target.
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  // The buttons are <button> elements; Bootstrap's reset does not reach them
+  // here because .btn is deliberately not used — these are icons, not buttons
+  // with a filled box.
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    border-color: var(--fg);
+  }
+}
+
+.share__icon {
+  // currentColor on the fill plus display:block: an inline SVG sits on the text
+  // baseline by default and would hang below the centre of a round button.
+  display: block;
+}
+
+.share__status {
+  // Reserves its line whether or not it has text, so confirming a copy does not
+  // nudge the comments down the page.
+  min-height: 1.25rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

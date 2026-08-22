@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { SiteConfigStore } from '../../stores/site-config.store';
-import { socialIconPath, socialSortKey } from './social-icons';
+import { socialIconPath, socialSortKey } from '../../core/social-icons';
 
 /** One entry from Site.social_links, resolved into something renderable. */
 interface SocialLink {

@@ -50,6 +50,13 @@
     "errorSubmit": "Ceva nu a mers la trimiterea datelor. Te rog încearcă din nou.",
     "errorThrottled": "Sunt cam multe trimiteri într-un timp scurt. Încearcă mai târziu."
   },
+  "share": {
+    "heading": "Distribuie acest text",
+    "native": "Distribuie",
+    "on": "Distribuie pe {{network}}",
+    "copy": "Copiază linkul",
+    "copied": "Link copiat"
+  },
   "comments": {
     "title": "Comentarii",
     "name": "Nume",

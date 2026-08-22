@@ -1,0 +1,104 @@
+<section class="share" aria-labelledby="share-heading">
+  <h2 class="share__heading" id="share-heading">{{ 'share.heading' | translate }}</h2>
+
+  <ul class="share__list nav gap-2 m-0 p-0">
+    @if (canShareNatively()) {
+      <li class="nav-item">
+        <button
+          class="share__button link-dark"
+          type="button"
+          [attr.title]="'share.native' | translate"
+          (click)="shareNatively()"
+        >
+          <svg
+            class="share__icon"
+            viewBox="0 0 16 16"
+            width="18"
+            height="18"
+            fill="currentColor"
+            aria-hidden="true"
+            focusable="false"
+          >
+            @for (path of sharePaths; track path) {
+              <path [attr.d]="path" />
+            }
+          </svg>
+          <span class="visually-hidden">{{ 'share.native' | translate }}</span>
+        </button>
+      </li>
+    }
+
+    @for (target of targets(); track target.key) {
+      <li class="nav-item">
+        <!--
+          rel on every one, as in the footer: these all leave the site, and
+          target=_blank without noopener hands the opener to the destination.
+        -->
+        <a
+          class="share__button link-dark"
+          [href]="target.href"
+          [attr.title]="'share.on' | translate: { network: target.label }"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <!--
+            The icon is decorative because the label sits beside it in
+            visually-hidden text: an aria-label here would give the link two
+            accessible names and read one of them twice.
+          -->
+          <svg
+            class="share__icon"
+            viewBox="0 0 16 16"
+            width="18"
+            height="18"
+            fill="currentColor"
+            aria-hidden="true"
+            focusable="false"
+          >
+            @for (path of target.paths; track path) {
+              <path [attr.d]="path" />
+            }
+          </svg>
+          <span class="visually-hidden">
+            {{ 'share.on' | translate: { network: target.label } }}
+          </span>
+        </a>
+      </li>
+    }
+
+    <li class="nav-item">
+      <button
+        class="share__button link-dark"
+        type="button"
+        [attr.title]="'share.copy' | translate"
+        (click)="copy()"
+      >
+        <svg
+          class="share__icon"
+          viewBox="0 0 16 16"
+          width="18"
+          height="18"
+          fill="currentColor"
+          aria-hidden="true"
+          focusable="false"
+        >
+          @for (path of copyPaths(); track path) {
+            <path [attr.d]="path" />
+          }
+        </svg>
+        <span class="visually-hidden">{{ 'share.copy' | translate }}</span>
+      </button>
+    </li>
+  </ul>
+
+  <!--
+    Always in the DOM, empty until it has something to say: a live region added
+    at the same moment as its text is often not announced at all, because the
+    screen reader has nothing to notice a change against.
+  -->
+  <p class="share__status" role="status" aria-live="polite">
+    @if (copied()) {
+      {{ 'share.copied' | translate }}
+    }
+  </p>
+</section>

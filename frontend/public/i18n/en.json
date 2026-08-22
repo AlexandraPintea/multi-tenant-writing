@@ -50,6 +50,13 @@
     "errorSubmit": "Something went wrong while sending your details. Please try again.",
     "errorThrottled": "That is a few submissions in a short time. Please try again later."
   },
+  "share": {
+    "heading": "Share this piece",
+    "native": "Share",
+    "on": "Share on {{network}}",
+    "copy": "Copy link",
+    "copied": "Link copied"
+  },
   "comments": {
     "title": "Comments",
     "name": "Name",

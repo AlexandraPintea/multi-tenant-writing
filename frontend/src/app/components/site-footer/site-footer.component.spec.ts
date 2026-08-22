@@ -7,7 +7,7 @@ import { patchState } from '@ngrx/signals';
 
 import { SiteConfig, SiteConfigStore } from '../../stores/site-config.store';
 import { SiteFooterComponent } from './site-footer.component';
-import { SOCIAL_ICON_PATHS } from './social-icons';
+import { SOCIAL_ICON_PATHS } from '../../core/social-icons';
 
 describe('SiteFooterComponent', () => {
   let fixture: ComponentFixture<SiteFooterComponent>;
