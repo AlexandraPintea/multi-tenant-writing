@@ -2,7 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>WritingFrontend</title>
+    <!-- Empty, and the element kept: SeoService sets the real title during the
+         server render, so this value only ever ships when SSR has failed — and
+         that is exactly when "WritingFrontend" went out to every unfurler that
+         scraped the site. It cannot be a site name either, because both tenants
+         share this build. Left blank, an unfurler falls back to the domain,
+         which is right on both. The element itself has to stay: Angular's Title
+         service writes into it. -->
+    <title></title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- Both tenants share this build, so the tab icon is the same on each.
