@@ -68,12 +68,16 @@ class Post(TranslatableModel):
     slug = models.SlugField(max_length=200, unique=True)
     cover_image = models.ImageField(upload_to="posts/covers/", blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
-    is_published = models.BooleanField(default=False, db_index=True)
 
     translations = TranslatedFields(
         title=models.CharField(max_length=300),
         body=models.TextField(),
         excerpt=models.TextField(blank=True),
+        # Per language, not per post. A piece can be finished in English while
+        # the Romanian copy is still a draft, and a single flag on the post
+        # would put both in front of readers at once. `published_at` stays on
+        # the post: the piece has one date, and the archive is ordered by it.
+        is_published=models.BooleanField(default=False, db_index=True),
     )
 
     class Meta:
@@ -96,31 +100,40 @@ class Post(TranslatableModel):
 
         site_ids = set(self.sites.values_list("id", flat=True))
 
-        if self.is_published:
-            # §4.3: publishable as soon as ONE of the target sites' enabled
-            # languages has a complete translation. Not all of them — that is
-            # what lets an English-only piece live on a bilingual site.
+        published = [t for t in self.translations.all() if t.is_published]
+        if published:
+            # §4.3, applied per language now: every published copy has to stand
+            # on its own — a title, a body, and a language one of the target
+            # sites enables. The rule used to ask for one complete language
+            # anywhere on the post, which is what let a finished English piece
+            # drag an empty Romanian page along behind it.
             enabled = {
                 language
                 for site in self.sites.all()
                 for language in site.enabled_languages
             }
-            complete = any(
-                translation.language_code in enabled
-                and translation.title.strip()
-                and translation.body.strip()
-                for translation in self.translations.all()
-            )
-            if not complete:
-                raise ValidationError(
-                    {
-                        "is_published": (
-                            "Cannot publish without a title and body in at "
-                            "least one language this post's sites enable "
-                            f"({sorted(enabled) or 'no sites selected'})."
-                        )
-                    }
-                )
+            for translation in published:
+                language = translation.language_code
+                if language not in enabled:
+                    raise ValidationError(
+                        {
+                            "is_published": (
+                                f"No site this post publishes to enables "
+                                f"{language} "
+                                f"({sorted(enabled) or 'no sites selected'}), "
+                                "so nobody would be able to read that copy."
+                            )
+                        }
+                    )
+                if not translation.title.strip() or not translation.body.strip():
+                    raise ValidationError(
+                        {
+                            "is_published": (
+                                f"Cannot publish the {language} copy without "
+                                "both a title and a body."
+                            )
+                        }
+                    )
 
         if self.category_id is not None and self.category.site_id not in site_ids:
             raise ValidationError(
@@ -161,6 +174,29 @@ class Post(TranslatableModel):
                 return author
         return None
 
+    def published_languages(self):
+        """The languages this post is actually published in, sorted.
+
+        What ``available_languages`` means to a reader: the language toggle dims
+        anything absent from it, and the detail endpoint 404s on it. A copy that
+        exists but is still a draft counts as absent, which is the whole point
+        of the flag living on the translation.
+        """
+        return sorted(
+            t.language_code for t in self.translations.all() if t.is_published
+        )
+
+    @classmethod
+    def published_on(cls, site):
+        """Posts with at least one published copy on ``site``, any language.
+
+        For the questions that are not about a particular language — may this
+        post take comments, does it exist here at all.
+        """
+        return cls.objects.filter(
+            sites=site, translations__is_published=True
+        ).distinct()
+
     @classmethod
     def visible_on(cls, site, lang):
         """The archive a reader of ``lang`` sees on ``site``, newest first.
@@ -168,12 +204,17 @@ class Post(TranslatableModel):
         The same three filters the list endpoint applies, in one place, because
         "the next post" has to mean "the next one in the list you are reading" —
         and the two drifting apart is the bug that would be hardest to notice.
+
+        Both translation conditions sit in one filter() call deliberately: that
+        is what makes them apply to the *same* joined translation row. Split
+        across two calls they would match a post whose English copy is published
+        and whose Romanian copy merely exists.
         """
         return (
             cls.objects.filter(
                 sites=site,
-                is_published=True,
                 translations__language_code=lang,
+                translations__is_published=True,
             )
             .distinct()
             .order_by(*VISIBLE_ORDER)
@@ -210,8 +251,8 @@ PostTranslation = Post._parler_meta.root_model
 
 
 @receiver(pre_save, sender=PostTranslation)
-def _sanitize_post_body(sender, instance, raw=False, **kwargs):
-    """Clean the body on every write, not just the ones through the admin form.
+def _sanitize_post_translation(sender, instance, raw=False, **kwargs):
+    """Clean the markup columns on every write, not just the admin form's.
 
     A form's clean_body() would be the obvious home and would be wrong: it only
     ever sees the one language tab being edited, and it would leave the seeder,
@@ -219,11 +260,17 @@ def _sanitize_post_body(sender, instance, raw=False, **kwargs):
     the API serves. "What is stored is safe" has to be a property of the column,
     not of one code path.
 
+    The excerpt goes through the same allowlist as the body, because it is the
+    same kind of thing — prose the author writes and the reading page renders
+    with innerHTML. Sharing the sanitizer also means there is one answer to
+    "which tags are allowed?" rather than one per field.
+
     `raw` is loaddata replaying a fixture verbatim — rewriting rows mid-load
     would leave the fixture and the database disagreeing about their contents.
     """
     if not raw:
         instance.body = clean_body(instance.body)
+        instance.excerpt = clean_body(instance.excerpt)
 
 
 class Comment(models.Model):

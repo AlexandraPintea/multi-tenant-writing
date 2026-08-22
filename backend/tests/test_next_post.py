@@ -18,10 +18,11 @@ ROAM = {"x-site-domain": "roamliterary.com"}
 
 
 def make_post(slug, site, published_at, *, languages=("en",), title=None):
-    post = Post.objects.create(slug=slug, is_published=True, published_at=published_at)
+    post = Post.objects.create(slug=slug, published_at=published_at)
     post.sites.set([site] if not isinstance(site, list) else site)
     for language in languages:
         post.set_current_language(language)
+        post.is_published = True
         post.title = title or slug
         post.body = "Body."
     post.save()
@@ -60,6 +61,7 @@ def test_the_link_carries_the_title_in_the_active_language(client, alex_site):
     make_post("current", alex_site, now, languages=("en", "ro"))
     older = make_post("older", alex_site, now - timedelta(days=1), languages=("en",))
     older.set_current_language("ro")
+    older.is_published = True
     older.title = "Titlu românesc"
     older.body = "Corp."
     older.save()
@@ -102,6 +104,9 @@ def test_unpublished_posts_are_skipped(client, alex_site):
     now = timezone.now()
     make_post("current", alex_site, now)
     draft = make_post("draft", alex_site, now - timedelta(days=1))
+    # On the translation, and named: publication is per language now, so
+    # "unpublished" is only ever true of a particular copy.
+    draft.set_current_language("en")
     draft.is_published = False
     draft.save()
     make_post("published-older", alex_site, now - timedelta(days=2))

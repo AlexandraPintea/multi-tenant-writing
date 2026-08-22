@@ -52,12 +52,22 @@ Two admin traps already hit here:
 `Post`, `Page`, `Author` and `Category` are `TranslatableModel`s. Translatable fields (`title`, `body`, `excerpt`, `content`, `bio`, `name`) live in sibling `*_translation` tables keyed by `(master, language_code)`. `Category.slug` is deliberately **not** translated — slugs are language-agnostic admin URLs, while the label the reader sees is translated. The API resolves the effective language per request via `resolve_lang(request)` in `api/views.py`:
 
 - `?lang=` not in the site's `enabled_languages` → silently coerced to `site.default_language`.
-- Post **list**: only posts that have a translation in the active language appear (filters via `translations__language_code=lang` + `distinct()`).
-- Post **detail**: if the post exists on this site but lacks the requested language, raise `PostNotAvailableInLanguage` — a custom DRF exception that returns a **404 with body `{"detail": "...", "available_languages": [...]}`**. The frontend's NGXS content state dispatches `LoadPostDetailNotInLanguage` on that shape rather than its failure action, and the language toggle dims the missing language off the `available_languages` it carries — so don't reduce it back to a plain 404 string. This is documented in architecture §4.3.
+- Post **list**: only posts **published in** the active language appear — `Post.visible_on(site, lang)` filters `translations__language_code=lang` and `translations__is_published=True` **in one `filter()` call**, plus `distinct()`. One call is load-bearing: split across two, the conditions stop applying to the same joined row and a post whose English copy is published would match on a Romanian translation that merely exists.
+- Post **detail**: if the post exists on this site but is not published in the requested language, raise `PostNotAvailableInLanguage` — a custom DRF exception that returns a **404 with body `{"detail": "...", "available_languages": [...]}`**. The frontend's NGXS content state dispatches `LoadPostDetailNotInLanguage` on that shape rather than its failure action, and the language toggle dims the missing language off the `available_languages` it carries — so don't reduce it back to a plain 404 string. This is documented in architecture §4.3.
 
-A post that isn't published to *this site* is a different failure and returns a **plain 404 with no hint** — offering `available_languages` there would invite the frontend to suggest a language switch that cannot help. Both shapes are covered in `tests/test_api_language_coverage.py`.
+`available_languages` means **published** languages, not every translation row that exists (`Post.published_languages()`, used by both the serializer and the detail view). A draft copy has to be absent from it, or the toggle would offer a language whose detail request 404s.
 
-**Publishing rule** (§4.3, and the §9 risk row), in `Post.clean()`: `is_published` requires a non-empty title *and* body in at least one language the post's target sites enable — one language, not all. That asymmetry is what lets an English-only piece live on a bilingual site while guaranteeing no reader lands on an empty page.
+A post that isn't published to *this site* — or has no published copy in any language — is a different failure and returns a **plain 404 with no hint**. Offering `available_languages` there would invite the frontend to suggest a language switch that cannot help, and on a draft it would tell a stranger which languages are being written. Both shapes are covered in `tests/test_api_language_coverage.py`.
+
+**Publishing rule** (§4.3, and the §9 risk row): `is_published` lives on the **translation**, not the Post, so publication is per language — the English piece goes out while the Romanian one is still a draft. Each published copy must have a non-empty title *and* body, in a language at least one of the post's target sites enables. Enforced in `Post.clean()` over the copies already saved, and mirrored in `PostAdminForm._check_publishable()` for the language tab being edited — which is the only layer that can catch the edit about to *become* one. `published_at` deliberately stays on the Post: the piece has one date, and the archive is ordered by it.
+
+**Parler will not let a master model and its translation share a field name**, which shapes the migration that moved the flag (`content/0010`): every operation renders the models of the state it runs against, so a state where both `Post` and `PostTranslation` carry `is_published` cannot be built even in passing. The migration renames the old column out of the way first, copies the value across, then drops it.
+
+### Author-written markup
+
+`Post.body`, `Post.excerpt` and `Page.content` are HTML the author types into the admin. Every write goes through `clean_body()` (`content/sanitize.py` — nh3 against an allowlist) on a `pre_save` receiver on the **translation** model, not in a form: the seeder, `manage.py shell` and data migrations write the same columns, and "what is stored is safe" has to be a property of the column rather than of one code path. The allowlist is deliberately a **subset of what Angular's own sanitizer permits** (`class` yes; `style`, `id`, `data-*` no) — anything allowed here but stripped there would survive the admin and the API and then vanish in the browser with nothing to explain why. `clean_body` also promotes blank-line-separated prose to `<p>`, so the column stays uniform and no renderer needs an "is this one of the old plain-text rows?" branch. That is why each field that became markup got a data migration: `0004` bodies, `0008` page content, `0011` excerpts.
+
+The frontend renders all three with `[innerHTML]`, and `bypassSecurityTrustHtml` must never appear. Two consequences: an excerpt now arrives wrapped in its own block tags, so a card renders it into a `<div>` (a `<p>` cannot legally contain one, and the container owns the spacing); and anything bound for a **meta description must go through `plainText()`** (`core/plain-text.ts`), because an unfurler displays tags instead of obeying them. It strips before truncating — slicing HTML first can cut a tag in half — and turns block boundaries into spaces while inline tags vanish, or `</em>.` becomes "language ." in the description.
 
 ### Settings layout
 
@@ -91,7 +101,7 @@ python manage.py seed_groups               # Idempotent — the two groups + dem
 python manage.py createsuperuser
 python manage.py runserver 8001            # 8001, matching frontend environment.development.ts
 
-# Tests (78 of them; run from backend/, not the repo root)
+# Tests (168 of them; run from backend/, not the repo root)
 pytest
 pytest tests/test_site_middleware.py::test_known_host_resolves_to_its_site
 
@@ -130,7 +140,7 @@ Note for the first deploy: `/api/site-config/` **500s when no `Site` row matches
 npm start                                   # ng serve on 4200 (dev SSR via Vite)
 npm run build -- --configuration development
 npm run serve:ssr:writing-frontend          # built SSR server on 4000
-npm test                                    # Jest (110 tests) — never `ng test`
+npm test                                    # Jest (120 tests) — never `ng test`
 npm run lint                                # prettier --check + tsc --noEmit
 npm run format                              # prettier --write over the same files
 npm run e2e                                 # Playwright; starts its own backend

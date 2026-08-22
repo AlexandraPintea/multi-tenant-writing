@@ -74,12 +74,41 @@ def test_wrong_site_is_a_plain_404_without_a_hint(client, roam_site, english_onl
 
 
 @pytest.mark.django_db
-def test_unpublished_post_is_a_plain_404(client, bilingual_post):
-    bilingual_post.is_published = False
-    bilingual_post.save()
+def test_unpublished_post_is_a_plain_404(client, bilingual_post, unpublish):
+    """Nothing published anywhere, so there is nothing to hint at.
+
+    A hint here would be worse than useless: it would list the languages a
+    draft exists in, telling a stranger what is being written.
+    """
+    unpublish(bilingual_post)
     response = client.get("/api/posts/the-power-of-words/", headers=ALEX)
     assert response.status_code == 404
     assert "available_languages" not in response.json()
+
+
+@pytest.mark.django_db
+def test_a_language_still_in_draft_404s_with_the_other_one_offered(
+    client, bilingual_post, unpublish
+):
+    """A draft copy fails exactly like a missing one.
+
+    Same 404, same hint, so the language toggle dims Romanian for the same
+    reason whether the copy does not exist yet or is not finished — the reader
+    cannot tell the difference and does not need to.
+    """
+    unpublish(bilingual_post, "ro")
+
+    response = client.get(
+        "/api/posts/the-power-of-words/", {"lang": "ro"}, headers=ALEX
+    )
+    assert response.status_code == 404
+    assert response.json()["available_languages"] == ["en"]
+
+    response = client.get(
+        "/api/posts/the-power-of-words/", {"lang": "en"}, headers=ALEX
+    )
+    assert response.status_code == 200
+    assert response.json()["available_languages"] == ["en"]
 
 
 @pytest.mark.django_db

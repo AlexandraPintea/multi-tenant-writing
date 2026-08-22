@@ -69,6 +69,20 @@ describe('SeoService', () => {
     expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
   });
 
+  it('strips the markup out of a description', () => {
+    // Excerpts and page content are author-written HTML. An unfurler shows tags
+    // rather than obeying them, so this is the one place markup must not reach.
+    seo.apply({
+      title: 'X',
+      description: '<p>An exploration of <em>language</em>.</p>',
+      path: '/x',
+    });
+
+    expect(content('name="description"')).toBe('An exploration of language.');
+    expect(content('property="og:description"')).toBe('An exploration of language.');
+    expect(content('name="twitter:description"')).toBe('An exploration of language.');
+  });
+
   it('falls back to the summary card when a post has no cover image', () => {
     seo.apply({ title: 'X', description: 'Y', image: null, path: '/x' });
 

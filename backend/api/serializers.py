@@ -108,7 +108,11 @@ class PostListSerializer(_TranslatedMixin, serializers.Serializer):
         return CategorySerializer(obj.category, context=self.context).data
 
     def get_available_languages(self, obj):
-        return sorted(obj.get_available_languages())
+        # Published copies, not every translation row that exists. This is the
+        # list the language toggle dims against, so a language whose copy is
+        # still a draft has to be absent from it — offering it would walk the
+        # reader straight into the detail endpoint's 404.
+        return obj.published_languages()
 
 
 class CommentSerializer(serializers.Serializer):

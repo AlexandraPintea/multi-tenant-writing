@@ -18,7 +18,7 @@ from people.models import Author
 @pytest.mark.django_db
 def test_author_from_another_site_is_rejected(roam_site, alex_author, bilingual_post):
     """An alexandrapintea profile cannot be the byline on a Roam-only post."""
-    post = Post.objects.create(slug="roam-only", is_published=False)
+    post = Post.objects.create(slug="roam-only")
     post.sites.set([roam_site])
     post.authors.set([alex_author])
 
@@ -33,7 +33,7 @@ def test_two_authors_for_the_same_site_are_rejected(alex_site, alex_author):
     # baker earns its place here: this row exists only to be a second author on
     # the same site, and nothing reads its translated bio.
     second = baker.make(Author, site=alex_site, slug="someone-else")
-    post = Post.objects.create(slug="two-bylines", is_published=False)
+    post = Post.objects.create(slug="two-bylines")
     post.sites.set([alex_site])
     post.authors.set([alex_author, second])
 
@@ -51,7 +51,7 @@ def test_one_author_per_site_on_a_cross_posted_piece_is_valid(bilingual_post):
 @pytest.mark.django_db
 def test_missing_profile_on_one_site_is_valid(alex_site, roam_site, alex_author):
     """A writer with no Roam profile still cross-posts; the byline is just null."""
-    post = Post.objects.create(slug="no-roam-profile", is_published=False)
+    post = Post.objects.create(slug="no-roam-profile")
     post.sites.set([alex_site, roam_site])
     post.authors.set([alex_author])
     post.full_clean()
@@ -62,7 +62,7 @@ def test_missing_profile_on_one_site_is_valid(alex_site, roam_site, alex_author)
 
 @pytest.mark.django_db
 def test_category_from_another_site_is_rejected(roam_site, alex_essay, roam_author):
-    post = Post.objects.create(slug="roam-wrong-category", is_published=False)
+    post = Post.objects.create(slug="roam-wrong-category")
     post.sites.set([roam_site])
     post.authors.set([roam_author])
     post.category = alex_essay
@@ -109,4 +109,6 @@ def test_admin_form_exposes_the_translated_fields():
     """Regression: PostAdminForm once subclassed a plain ModelForm, which
     replaced parler's TranslatableModelForm and silently dropped every
     translated field — leaving no way to type a post's text in the admin."""
-    assert {"title", "body", "excerpt"} <= set(PostAdminForm.base_fields)
+    assert {"title", "body", "excerpt", "is_published"} <= set(
+        PostAdminForm.base_fields
+    )

@@ -17,7 +17,9 @@
       <h3>
         <a [routerLink]="['/writings', post.slug]">{{ post.title }}</a>
       </h3>
-      <p class="preview__excerpt">{{ post.excerpt }}</p>
+      <!-- A div with innerHTML, matching the writings list: the excerpt is
+           author-written HTML, sanitized on the way into the database. -->
+      <div class="preview__excerpt" [innerHTML]="post.excerpt"></div>
     </article>
   } @empty {
     <p>{{ 'common.nothingYet' | translate }}</p>

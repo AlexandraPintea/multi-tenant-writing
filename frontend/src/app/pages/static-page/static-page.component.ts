@@ -46,9 +46,11 @@ export class StaticPageComponent {
         return;
       }
       this.seo.apply({
+        // The opening of the body: these pages have no excerpt field. Passed
+        // whole, because content is HTML and slicing it here would cut through
+        // a tag — SeoService strips the markup first, then shortens.
         title: page.title,
-        // First couple of lines of the body: these pages have no excerpt field.
-        description: page.content.slice(0, 200),
+        description: page.content,
         path: `/${page.slug}`,
       });
     });
